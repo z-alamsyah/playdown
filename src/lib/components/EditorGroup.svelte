@@ -4,6 +4,8 @@
   import TabBar from "./TabBar.svelte";
   import EditorPane from "./EditorPane.svelte";
   import PreviewPane from "./PreviewPane.svelte";
+  import ImagePane from "./ImagePane.svelte";
+  import { fileKind } from "../fileKind";
 
   let { group }: { group: EditorGroup } = $props();
 
@@ -13,6 +15,7 @@
   const activeTab = $derived(
     group.activeIndex >= 0 ? group.tabs[group.activeIndex] : null,
   );
+  const kind = $derived(activeTab ? fileKind(activeTab.path) : "text");
 
   function computeEdge(e: DragEvent): DropEdge {
     const r = paneEl.getBoundingClientRect();
@@ -102,10 +105,12 @@
   >
     {#if activeTab}
       {#key activeTab.path + "::" + group.viewMode}
-        {#if group.viewMode === "edit"}
-          <EditorPane path={activeTab.path} groupId={group.id} />
+        {#if kind === "image"}
+          <ImagePane path={activeTab.path} />
+        {:else if group.viewMode === "edit"}
+          <EditorPane path={activeTab.path} groupId={group.id} {kind} />
         {:else}
-          <PreviewPane path={activeTab.path} groupId={group.id} />
+          <PreviewPane path={activeTab.path} groupId={group.id} {kind} />
         {/if}
       {/key}
     {:else}

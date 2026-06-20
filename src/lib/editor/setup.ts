@@ -16,6 +16,8 @@ import {
 } from "@codemirror/commands";
 import { markdown, markdownLanguage } from "@codemirror/lang-markdown";
 import { languages } from "@codemirror/language-data";
+import { json } from "@codemirror/lang-json";
+import type { Extension } from "@codemirror/state";
 import {
   syntaxHighlighting,
   defaultHighlightStyle,
@@ -38,12 +40,24 @@ const baseTheme = EditorView.theme({
   "&.cm-focused": { outline: "none" },
 });
 
+export type EditorLanguage = "markdown" | "json" | "text";
+
 export interface EditorOptions {
   parent: HTMLElement;
   doc: string;
   dark: boolean;
+  language: EditorLanguage;
   onChange: (value: string) => void;
   onSave: () => void;
+}
+
+function languageExtensions(language: EditorLanguage): Extension {
+  if (language === "json") return json();
+  if (language === "text") return [];
+  return [
+    markdown({ base: markdownLanguage, codeLanguages: languages }),
+    frontmatterExtension,
+  ];
 }
 
 export function createEditor(opts: EditorOptions): EditorView {
@@ -75,8 +89,7 @@ export function createEditor(opts: EditorOptions): EditorView {
       bracketMatching(),
       highlightActiveLine(),
       syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
-      markdown({ base: markdownLanguage, codeLanguages: languages }),
-      frontmatterExtension,
+      languageExtensions(opts.language),
       EditorView.lineWrapping,
       appKeymap,
       keymap.of([

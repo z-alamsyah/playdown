@@ -10,6 +10,7 @@ import type {
 import { EditorView } from "@codemirror/view";
 import { readFile, writeFile } from "../tauri/fs";
 import type { Heading } from "../markdown/render";
+import { fileKind, isImage } from "../fileKind";
 
 function uid(): string {
   return crypto.randomUUID();
@@ -130,9 +131,30 @@ class GroupsStore {
       g.activeIndex = existing;
       return;
     }
-    await this.ensureDoc(path);
+    if (!isImage(path)) await this.ensureDoc(path);
     g.tabs.push({ path, name: name ?? baseName(path) });
     g.activeIndex = g.tabs.length - 1;
+  }
+
+  /** Pretty-print the active JSON document (in the editor or the buffer). */
+  formatActive() {
+    const g = this.activeGroup;
+    const t = this.activeTab;
+    if (!g || !t || fileKind(t.path) !== "json") return;
+    const view = this.editors.get(g.id);
+    try {
+      if (view) {
+        const formatted = JSON.stringify(JSON.parse(view.state.doc.toString()), null, 2);
+        view.dispatch({
+          changes: { from: 0, to: view.state.doc.length, insert: formatted },
+        });
+      } else {
+        const formatted = JSON.stringify(JSON.parse(this.docContent(t.path)), null, 2);
+        this.setDocContent(t.path, formatted);
+      }
+    } catch (e) {
+      console.error("Format failed — invalid JSON:", e);
+    }
   }
 
   // ---- tab navigation ------------------------------------------------------
@@ -417,7 +439,7 @@ class GroupsStore {
         const tabs: Tab[] = [];
         for (const path of g.tabPaths) {
           try {
-            await this.ensureDoc(path);
+            if (!isImage(path)) await this.ensureDoc(path);
             tabs.push({ path, name: baseName(path) });
           } catch {
             /* file gone — skip */

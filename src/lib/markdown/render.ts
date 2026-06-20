@@ -85,6 +85,28 @@ export function render(source: string): RenderResult {
   };
 }
 
+/** Pretty-print + syntax-highlight a JSON document for preview. */
+export function renderJson(content: string): RenderResult {
+  if (!content.trim()) {
+    return { html: "", frontmatter: null, hasMermaid: false };
+  }
+  try {
+    const pretty = JSON.stringify(JSON.parse(content), null, 2);
+    const code = hljs.highlight(pretty, { language: "json" }).value;
+    return {
+      html: `<pre class="hljs json-preview"><code>${code}</code></pre>`,
+      frontmatter: null,
+      hasMermaid: false,
+    };
+  } catch (e) {
+    return {
+      html: `<div class="render-error">Invalid JSON — ${md.utils.escapeHtml(String(e))}</div>`,
+      frontmatter: null,
+      hasMermaid: false,
+    };
+  }
+}
+
 export interface Heading {
   level: number;
   text: string;

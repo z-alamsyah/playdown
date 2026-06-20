@@ -104,6 +104,7 @@
       case "zoomIn": zoomIn(); break;
       case "zoomOut": zoomOut(); break;
       case "zoomReset": zoomReset(); break;
+      case "formatDoc": groups.formatActive(); break;
       case "openSettings": settingsOpen = true; break;
       case "closeTab": {
         const g = groups.activeGroup;

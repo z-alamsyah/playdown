@@ -1,15 +1,20 @@
 <script lang="ts">
   import { onMount, onDestroy } from "svelte";
-  import { render } from "../markdown/render";
+  import { render, renderJson } from "../markdown/render";
   import { groups } from "../stores/groups.svelte";
   import { settings } from "../stores/settings.svelte";
   import { openUrl } from "@tauri-apps/plugin-opener";
+  import type { FileKind } from "../fileKind";
 
-  let { path, groupId }: { path: string; groupId: string } = $props();
+  let { path, groupId, kind }: { path: string; groupId: string; kind: FileKind } = $props();
 
   let body: HTMLDivElement;
 
-  const result = $derived(render(groups.docContent(path)));
+  const result = $derived(
+    kind === "json"
+      ? renderJson(groups.docContent(path))
+      : render(groups.docContent(path)),
+  );
 
   function formatVal(v: unknown): string {
     if (v === null || v === undefined) return "";

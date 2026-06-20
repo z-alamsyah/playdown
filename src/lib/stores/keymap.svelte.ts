@@ -16,6 +16,7 @@ export type Action =
   | "zoomIn"
   | "zoomOut"
   | "zoomReset"
+  | "formatDoc"
   | "openSettings";
 
 export interface ActionDef {
@@ -39,6 +40,7 @@ export const ACTIONS: ActionDef[] = [
   { id: "zoomIn", label: "Zoom in" },
   { id: "zoomOut", label: "Zoom out" },
   { id: "zoomReset", label: "Reset zoom" },
+  { id: "formatDoc", label: "Format JSON" },
   { id: "openSettings", label: "Open settings" },
 ];
 
@@ -58,6 +60,7 @@ const DEFAULTS: Record<Action, string> = {
   zoomIn: "Mod+=",
   zoomOut: "Mod+-",
   zoomReset: "Mod+0",
+  formatDoc: "Mod+Shift+F",
   openSettings: "Mod+,",
 };
 
