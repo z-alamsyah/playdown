@@ -1,0 +1,64 @@
+<script lang="ts">
+  import { render } from "../markdown/render";
+  import { tabs } from "../stores/tabs.svelte";
+  import { settings } from "../stores/settings.svelte";
+  import { openUrl } from "@tauri-apps/plugin-opener";
+
+  let body: HTMLDivElement;
+
+  const result = $derived(render(tabs.active?.content ?? ""));
+
+  function formatVal(v: unknown): string {
+    if (v === null || v === undefined) return "";
+    if (Array.isArray(v)) return v.map(formatVal).join(", ");
+    if (typeof v === "object") return JSON.stringify(v);
+    return String(v);
+  }
+
+  // Inject rendered HTML, wire external links to the OS browser, render mermaid.
+  $effect(() => {
+    if (!body) return;
+    body.innerHTML = result.html;
+
+    body.querySelectorAll<HTMLAnchorElement>("a[href]").forEach((a) => {
+      const href = a.getAttribute("href") ?? "";
+      if (/^https?:\/\//i.test(href)) {
+        a.addEventListener("click", (e) => {
+          e.preventDefault();
+          void openUrl(href);
+        });
+      }
+    });
+
+    if (result.hasMermaid) {
+      const isDark = settings.theme === "dark";
+      void import("mermaid")
+        .then(({ default: mermaid }) => {
+          mermaid.initialize({
+            startOnLoad: false,
+            theme: isDark ? "dark" : "default",
+          });
+          const nodes = body.querySelectorAll<HTMLElement>(".mermaid");
+          if (nodes.length) void mermaid.run({ nodes });
+        })
+        .catch((e) => console.error("mermaid failed:", e));
+    }
+  });
+</script>
+
+<div class="preview">
+  {#if result.frontmatter}
+    <div class="frontmatter-card">
+      <div class="fm-title">frontmatter</div>
+      <dl>
+        {#each Object.entries(result.frontmatter) as [key, value]}
+          <div class="fm-row">
+            <dt>{key}</dt>
+            <dd>{formatVal(value)}</dd>
+          </div>
+        {/each}
+      </dl>
+    </div>
+  {/if}
+  <div class="markdown-body" bind:this={body}></div>
+</div>
