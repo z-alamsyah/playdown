@@ -171,20 +171,29 @@
   </main>
 {/snippet}
 
-<div class="app">
-  {#if settings.sidebarSide === "left"}
-    {#if settings.sidebarVisible}<Sidebar side="left" />{/if}
-    {@render mainArea()}
-    {#if settings.outlineVisible}<Outline side="right" />{/if}
-  {:else}
-    {#if settings.outlineVisible}<Outline side="left" />{/if}
-    {@render mainArea()}
-    {#if settings.sidebarVisible}<Sidebar side="right" />{/if}
-  {/if}
+<div class="window">
+  <div class="titlebar" data-tauri-drag-region>
+    <span class="titlebar-title">📝 Playdown</span>
+    {#if groups.activeTab}
+      <span class="titlebar-file">— {groups.activeTab.name}</span>
+    {/if}
+  </div>
 
-  {#if fileHover}
-    <div class="file-drop-overlay">
-      <div class="file-drop-card">📂 Drop folder or markdown to open</div>
-    </div>
-  {/if}
+  <div class="app">
+    {#if settings.sidebarSide === "left"}
+      {#if settings.sidebarVisible}<Sidebar side="left" />{/if}
+      {@render mainArea()}
+      {#if settings.outlineVisible}<Outline side="right" />{/if}
+    {:else}
+      {#if settings.outlineVisible}<Outline side="left" />{/if}
+      {@render mainArea()}
+      {#if settings.sidebarVisible}<Sidebar side="right" />{/if}
+    {/if}
+
+    {#if fileHover}
+      <div class="file-drop-overlay">
+        <div class="file-drop-card">📂 Drop folder or markdown to open</div>
+      </div>
+    {/if}
+  </div>
 </div>
