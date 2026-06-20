@@ -12,7 +12,7 @@ struct FileNode {
     children: Option<Vec<FileNode>>,
 }
 
-const MD_EXTS: [&str; 4] = ["md", "markdown", "mdx", "mdown"];
+// Heavy / noise directories are still skipped even though dotfiles are shown.
 const SKIP_DIRS: [&str; 8] = [
     "node_modules",
     ".git",
@@ -24,16 +24,9 @@ const SKIP_DIRS: [&str; 8] = [
     ".cache",
 ];
 
-fn is_markdown(path: &Path) -> bool {
-    path.extension()
-        .and_then(|e| e.to_str())
-        .map(|e| MD_EXTS.contains(&e.to_lowercase().as_str()))
-        .unwrap_or(false)
-}
-
-/// Recursively build a tree of directories that contain markdown and the
-/// markdown files themselves. Empty directories (no markdown anywhere below)
-/// are pruned so the sidebar stays focused on `.md` content.
+/// Recursively build the full file tree (all files and folders, including
+/// dotfiles like `.claude` / `.gitignore`). Only the heavy build/VCS
+/// directories in `SKIP_DIRS` are pruned.
 fn build_tree(dir: &Path) -> Vec<FileNode> {
     let read = match fs::read_dir(dir) {
         Ok(r) => r,
@@ -49,24 +42,19 @@ fn build_tree(dir: &Path) -> Vec<FileNode> {
             Some(n) => n.to_string(),
             None => continue,
         };
-        if name.starts_with('.') {
-            continue;
-        }
 
         if path.is_dir() {
             if SKIP_DIRS.contains(&name.as_str()) {
                 continue;
             }
             let children = build_tree(&path);
-            if !children.is_empty() {
-                nodes.push(FileNode {
-                    name,
-                    path: path.to_string_lossy().into_owned(),
-                    is_dir: true,
-                    children: Some(children),
-                });
-            }
-        } else if is_markdown(&path) {
+            nodes.push(FileNode {
+                name,
+                path: path.to_string_lossy().into_owned(),
+                is_dir: true,
+                children: Some(children),
+            });
+        } else {
             nodes.push(FileNode {
                 name,
                 path: path.to_string_lossy().into_owned(),

@@ -308,16 +308,25 @@ class GroupsStore {
       from.activeIndex = from.tabs.length - 1;
   }
 
-  /** Split the active group to the right, showing the same file as a preview. */
+  /**
+   * Split the active group: the new pane shows the active file, and the
+   * original pane switches to a different open tab (if any) so both files
+   * stay visible.
+   */
   splitActive(edge: DropEdge = "right") {
     this.ensureInitial();
     const g = this.activeGroup;
     if (!g) return;
     const t = this.groupActiveTab(g);
-    const ng = this.newGroup(t ? "preview" : g.viewMode);
+    const ng = this.newGroup(g.viewMode);
     if (t) {
       ng.tabs.push({ path: t.path, name: t.name });
       ng.activeIndex = 0;
+      // Keep a different file visible in the original group.
+      if (g.tabs.length > 1) {
+        const other = g.activeIndex > 0 ? g.activeIndex - 1 : 1;
+        g.activeIndex = Math.min(other, g.tabs.length - 1);
+      }
     }
     this.groups.push(ng);
     this.insertSplit(g.id, ng.id, edge);

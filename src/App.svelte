@@ -69,10 +69,13 @@
   });
 
   // Persist the editor session (layout + open tabs) whenever it changes.
+  // Debounced so dragging split dividers doesn't flood the store.
+  let sessionTimer: ReturnType<typeof setTimeout> | undefined;
   $effect(() => {
     if (!settings.loaded) return;
     const snap = groups.serialize();
-    void settings.setSession(snap);
+    clearTimeout(sessionTimer);
+    sessionTimer = setTimeout(() => void settings.setSession(snap), 300);
   });
 
   // Trackpad pinch emits a wheel event with ctrlKey set.
@@ -136,6 +139,7 @@
 
 {#snippet mainArea()}
   <main class="main">
+    <div class="editor-area">
     {#if showWelcome}
       <div class="empty">
         <div class="empty-logo">📝</div>
@@ -156,6 +160,7 @@
     {:else if groups.layout}
       <Layout node={groups.layout} />
     {/if}
+    </div>
     <StatusBar onOpenSettings={() => (settingsOpen = true)} />
   </main>
 {/snippet}
