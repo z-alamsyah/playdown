@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { FileNode } from "../types";
-  import { tabs } from "../stores/tabs.svelte";
+  import { groups } from "../stores/groups.svelte";
   import Self from "./FileTree.svelte";
 
   let { nodes, depth }: { nodes: FileNode[]; depth: number } = $props();
@@ -30,9 +30,9 @@
       {:else}
         <button
           class="row file"
-          class:active={tabs.active?.path === node.path}
+          class:active={groups.activeTab?.path === node.path}
           style="padding-left: {depth * 12 + 24}px"
-          onclick={() => tabs.open(node.path, node.name)}
+          onclick={() => groups.openFile(node.path, node.name)}
         >
           <span class="label">{node.name}</span>
         </button>

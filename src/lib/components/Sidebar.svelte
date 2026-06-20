@@ -22,7 +22,7 @@
     {#if workspace.loading}
       <div class="muted">Loading…</div>
     {:else if !workspace.root}
-      <div class="muted">Open a folder to start.</div>
+      <div class="muted">Open a folder, or drag one onto the window.</div>
     {:else if workspace.tree.length === 0}
       <div class="muted">No markdown files found.</div>
     {:else}

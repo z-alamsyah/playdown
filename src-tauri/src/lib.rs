@@ -94,6 +94,11 @@ fn list_dir_tree(path: String) -> Result<Vec<FileNode>, String> {
 }
 
 #[tauri::command]
+fn is_dir(path: String) -> bool {
+    Path::new(&path).is_dir()
+}
+
+#[tauri::command]
 fn read_file(path: String) -> Result<String, String> {
     fs::read_to_string(&path).map_err(|e| e.to_string())
 }
@@ -112,6 +117,7 @@ pub fn run() {
         .plugin(tauri_plugin_window_state::Builder::default().build())
         .invoke_handler(tauri::generate_handler![
             list_dir_tree,
+            is_dir,
             read_file,
             write_file
         ])

@@ -1,26 +1,24 @@
 import { LazyStore } from "@tauri-apps/plugin-store";
-import type { Theme, ViewMode } from "../types";
+import type { Theme } from "../types";
+import type { SessionState } from "./groups.svelte";
 
 const store = new LazyStore("settings.json");
 
-/** Persisted UI preferences: theme, last opened folder, view mode. */
+/** Persisted preferences: theme, last folder, and the editor session. */
 class Settings {
   theme = $state<Theme>("dark");
-  viewMode = $state<ViewMode>("edit");
   lastFolder = $state<string | null>(null);
-  openTabs = $state<string[]>([]);
+  session = $state<SessionState | null>(null);
   loaded = $state(false);
 
   async load() {
     try {
       const theme = await store.get<Theme>("theme");
       const lastFolder = await store.get<string>("lastFolder");
-      const viewMode = await store.get<ViewMode>("viewMode");
-      const openTabs = await store.get<string[]>("openTabs");
+      const session = await store.get<SessionState>("session");
       if (theme) this.theme = theme;
       if (lastFolder) this.lastFolder = lastFolder;
-      if (viewMode) this.viewMode = viewMode;
-      if (openTabs) this.openTabs = openTabs;
+      if (session) this.session = session;
     } catch (e) {
       console.error("Failed to load settings:", e);
     }
@@ -42,23 +40,14 @@ class Settings {
     void this.setTheme(this.theme === "dark" ? "light" : "dark");
   }
 
-  async setViewMode(mode: ViewMode) {
-    this.viewMode = mode;
-    await this.persist("viewMode", mode);
-  }
-
-  toggleView() {
-    void this.setViewMode(this.viewMode === "edit" ? "preview" : "edit");
-  }
-
   async setLastFolder(path: string) {
     this.lastFolder = path;
     await this.persist("lastFolder", path);
   }
 
-  async setOpenTabs(paths: string[]) {
-    this.openTabs = paths;
-    await this.persist("openTabs", paths);
+  async setSession(session: SessionState) {
+    this.session = session;
+    await this.persist("session", session);
   }
 
   private async persist(key: string, value: unknown) {

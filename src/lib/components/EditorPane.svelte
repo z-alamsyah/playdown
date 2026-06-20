@@ -3,21 +3,21 @@
   import { EditorView } from "@codemirror/view";
   import { oneDark } from "@codemirror/theme-one-dark";
   import { createEditor, themeCompartment } from "../editor/setup";
-  import { tabs } from "../stores/tabs.svelte";
+  import { groups } from "../stores/groups.svelte";
   import { settings } from "../stores/settings.svelte";
+
+  let { path }: { path: string } = $props();
 
   let container: HTMLDivElement;
   let view: EditorView | undefined;
 
   onMount(() => {
-    const tab = tabs.active;
-    if (!tab) return;
     view = createEditor({
       parent: container,
-      doc: tab.content,
+      doc: groups.docContent(path),
       dark: settings.theme === "dark",
-      onChange: (v) => tabs.setContent(v),
-      onSave: () => void tabs.save(),
+      onChange: (v) => groups.setDocContent(path, v),
+      onSave: () => void groups.saveDoc(path),
     });
     view.focus();
   });

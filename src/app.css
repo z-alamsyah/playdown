@@ -597,3 +597,269 @@ kbd {
 .hljs-emphasis {
   font-style: italic;
 }
+
+/* ============================================================
+   Editor groups + split layout
+   ============================================================ */
+.layout-split {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+}
+.layout-split.row {
+  flex-direction: row;
+}
+.layout-split.column {
+  flex-direction: column;
+}
+.layout-cell {
+  flex-basis: 0;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  overflow: hidden;
+}
+
+.divider {
+  flex-shrink: 0;
+  border: none;
+  padding: 0;
+  background: var(--border);
+  transition: background 0.12s;
+  position: relative;
+}
+.divider:hover,
+.divider:active {
+  background: var(--accent);
+}
+.divider.row {
+  width: 1px;
+  cursor: col-resize;
+}
+.divider.row::after {
+  content: "";
+  position: absolute;
+  inset: 0 -3px;
+}
+.divider.column {
+  height: 1px;
+  cursor: row-resize;
+}
+.divider.column::after {
+  content: "";
+  position: absolute;
+  inset: -3px 0;
+}
+
+.editor-group {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  background: var(--bg);
+}
+
+.group-header {
+  display: flex;
+  align-items: stretch;
+  background: var(--bg-elev);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.group-header .tabbar {
+  flex: 1;
+  min-width: 0;
+  border-bottom: none;
+}
+.group-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 0 6px;
+  flex-shrink: 0;
+  border-left: 1px solid var(--border);
+}
+.ghost-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 14px;
+  padding: 4px 7px;
+  border-radius: 4px;
+  line-height: 1;
+}
+.ghost-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text);
+}
+
+/* Active-group accent on the header */
+.editor-group.active .group-header {
+  box-shadow: inset 0 2px 0 var(--accent);
+}
+
+/* tab states (override base) */
+.tab.active {
+  background: var(--bg);
+  color: var(--text);
+  box-shadow: none;
+}
+.tab.current {
+  box-shadow: inset 0 -2px 0 var(--accent);
+}
+
+.group-pane {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+  overflow: hidden;
+}
+.group-empty {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: var(--text-faint);
+  font-size: 13px;
+}
+
+/* drag-to-split overlay */
+.drop-overlay {
+  position: absolute;
+  background: var(--accent-soft);
+  border: 1px solid var(--accent);
+  pointer-events: none;
+  z-index: 5;
+  transition: all 0.06s ease;
+}
+.drop-overlay.center {
+  inset: 0;
+}
+.drop-overlay.left {
+  top: 0;
+  left: 0;
+  width: 50%;
+  height: 100%;
+}
+.drop-overlay.right {
+  top: 0;
+  right: 0;
+  width: 50%;
+  height: 100%;
+}
+.drop-overlay.top {
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 50%;
+}
+.drop-overlay.bottom {
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 50%;
+}
+
+/* ============================================================
+   Quick Open palette
+   ============================================================ */
+.quickopen-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  z-index: 50;
+}
+.quickopen {
+  position: fixed;
+  top: 12%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(640px, 90vw);
+  max-height: 60vh;
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.4);
+  z-index: 51;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.quickopen input {
+  border: none;
+  border-bottom: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+  font-size: 15px;
+  padding: 14px 16px;
+  outline: none;
+  font-family: var(--sans);
+}
+.quickopen ul {
+  list-style: none;
+  margin: 0;
+  padding: 4px;
+  overflow-y: auto;
+}
+.quickopen li {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 7px 12px;
+  border-radius: 5px;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.quickopen li.sel {
+  background: var(--accent-soft);
+}
+.qo-name {
+  font-weight: 500;
+  color: var(--text);
+  flex-shrink: 0;
+}
+.qo-rel {
+  font-size: 12px;
+  color: var(--text-faint);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.qo-empty {
+  color: var(--text-faint);
+  padding: 12px;
+  cursor: default;
+}
+
+/* ============================================================
+   OS file-drop overlay
+   ============================================================ */
+.file-drop-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--accent-soft);
+  pointer-events: none;
+}
+.file-drop-card {
+  background: var(--bg-elev);
+  border: 2px dashed var(--accent);
+  border-radius: 10px;
+  padding: 24px 36px;
+  font-size: 16px;
+  color: var(--text);
+}
+.empty-drop {
+  font-size: 12px;
+  color: var(--text-faint);
+  margin-top: 16px;
+}

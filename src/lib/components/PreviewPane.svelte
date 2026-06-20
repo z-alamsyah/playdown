@@ -1,12 +1,14 @@
 <script lang="ts">
   import { render } from "../markdown/render";
-  import { tabs } from "../stores/tabs.svelte";
+  import { groups } from "../stores/groups.svelte";
   import { settings } from "../stores/settings.svelte";
   import { openUrl } from "@tauri-apps/plugin-opener";
 
+  let { path }: { path: string } = $props();
+
   let body: HTMLDivElement;
 
-  const result = $derived(render(tabs.active?.content ?? ""));
+  const result = $derived(render(groups.docContent(path)));
 
   function formatVal(v: unknown): string {
     if (v === null || v === undefined) return "";
