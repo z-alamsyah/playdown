@@ -264,6 +264,22 @@ class GroupsStore {
     }
   }
 
+  /** Close any open tabs at `target` or (for folders) under it. */
+  closeUnder(target: string) {
+    const base = target.replace(/[/\\]+$/, "");
+    const match = (p: string) =>
+      p === target || p === base || p.startsWith(base + "/") || p.startsWith(base + "\\");
+    for (const id of this.groups.map((g) => g.id)) {
+      let g = this.group(id);
+      while (g) {
+        const i = g.tabs.findIndex((t) => match(t.path));
+        if (i < 0) break;
+        this.closeTab(id, i);
+        g = this.group(id);
+      }
+    }
+  }
+
   closeGroup(id: string) {
     if (this.groups.length <= 1 || !this.layout) return;
     this.groups = this.groups.filter((g) => g.id !== id);

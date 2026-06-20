@@ -6,30 +6,48 @@ Built for people who live in markdown all day — skills, agents, PRDs, manifest
 
 | | Playdown | Typical code editor |
 |---|---|---|
-| Binary | ~6 MB | 100+ MB |
+| App bundle | ~5 MB | 100+ MB |
 | RAM (idle) | ~70–100 MB | 300–500+ MB |
 | Startup | < 0.5s | 1–3s |
 
 ## Features
 
-- 📂 **Folder tree** — open a folder, browse all markdown recursively
-- 🗂️ **Tabs** — open multiple files at once
-- ✏️ **Edit ⇄ Preview** — toggle with `⌘E` (single-pane, distraction-free)
-- 🧩 **Frontmatter-aware** — YAML frontmatter is highlighted & foldable in the editor and rendered as a metadata card in preview
+- 📂 **Folder tree** — open a folder (or drag one onto the window); shows all files including dotfiles, with nested indent guides
+- 🗂️ **Tabs** — open multiple files; drag tabs to reorder or move between groups
+- 🪟 **Split panes** — VSCode-style: drag a tab to a pane edge to split (row/column, nested), resizable dividers; `⌘\` splits right
+- ✏️ **Edit ⇄ Preview** — per-pane toggle (top-right of each group); edit on the left, live preview on the right
+- 🔎 **Quick Open** — `⌘P` fuzzy file finder
+- 🧭 **Outline** — headings of the active file in a panel opposite the sidebar; click to jump
+- 🧩 **Frontmatter-aware** — YAML frontmatter highlighted & foldable in the editor, rendered as a metadata card in preview
 - ✨ **GFM** — tables, task lists, code syntax highlighting
 - 🧜 **Mermaid** — diagrams rendered in preview (lazy-loaded)
-- 🌗 **Dark / light themes** — persisted across restarts
-- 💾 Remembers your last folder, open tabs, and view mode
+- 🔡 **JSON** — syntax highlighting, `⌘⇧F` to format/pretty-print, highlighted JSON preview
+- 🖼️ **Image preview** — png/jpg/gif/webp/svg/bmp/ico/avif rendered inline
+- 🗃️ **File ops** — new file / new folder (sidebar buttons or right-click), delete to Trash, copy full / relative path
+- 🔍 **Zoom** — `⌘=` / `⌘-` / `⌘0` or trackpad pinch
+- ⚙️ **Settings** (`⌘,`) — theme, sidebar side (left/right), zoom, and **fully rebindable shortcuts**
+- 🌗 **Dark / light themes**, window state, and full session (layout + open tabs) persisted across restarts
 
 ## Keyboard shortcuts
 
+All shortcuts are rebindable in Settings (`⌘,`). Defaults:
+
 | Shortcut | Action |
 |---|---|
-| `⌘/Ctrl + O` | Open folder |
-| `⌘/Ctrl + B` | Toggle sidebar |
-| `⌘/Ctrl + E` | Toggle edit / preview |
-| `⌘/Ctrl + S` | Save |
-| `⌘/Ctrl + W` | Close tab |
+| `⌘P` | Quick open (find file) |
+| `⌘O` | Open folder |
+| `⌘S` | Save |
+| `⌘E` | Toggle edit / preview |
+| `⌘\` | Split right |
+| `⌘B` | Toggle sidebar |
+| `⌘⇧O` | Toggle outline |
+| `⌘⇧F` | Format JSON |
+| `⌘W` | Close tab |
+| `⌘1`–`⌘9` | Select tab |
+| `Ctrl+Tab` / `Ctrl+⇧+Tab` | Cycle tabs |
+| `⌘⌥←` / `⌘⌥→` | Focus previous / next split group |
+| `⌘=` / `⌘-` / `⌘0` | Zoom in / out / reset |
+| `⌘,` | Settings |
 
 ## Development
 
@@ -38,7 +56,7 @@ Prerequisites: [Node.js](https://nodejs.org) + [pnpm](https://pnpm.io) + [Rust](
 ```bash
 pnpm install
 pnpm tauri dev      # run the app in dev mode
-pnpm tauri build    # produce a distributable bundle
+pnpm tauri build    # produce a distributable bundle (.app / .dmg / …)
 ```
 
 ## Tech
