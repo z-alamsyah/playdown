@@ -198,10 +198,20 @@ class GroupsStore {
       view.focus();
     } else {
       const el = this.previews.get(g.id);
-      const target = el?.querySelector<HTMLElement>(
-        `#${CSS.escape(h.slug)}`,
-      );
-      target?.scrollIntoView({ behavior: "smooth", block: "start" });
+      const target = el?.querySelector<HTMLElement>(`#${CSS.escape(h.slug)}`);
+      if (!target) return;
+      // Scroll only this pane's own scroll container — never an ancestor,
+      // so other split panes don't move.
+      const scroller = target.closest<HTMLElement>(".preview");
+      if (scroller) {
+        const top =
+          target.getBoundingClientRect().top -
+          scroller.getBoundingClientRect().top +
+          scroller.scrollTop;
+        scroller.scrollTo({ top, behavior: "smooth" });
+      } else {
+        target.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
     }
   }
 
