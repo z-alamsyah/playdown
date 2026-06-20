@@ -12,15 +12,11 @@
   }
 </script>
 
-<ul class="filetree">
+<ul class="filetree" class:nested={depth > 0}>
   {#each nodes as node (node.path)}
     <li>
       {#if node.is_dir}
-        <button
-          class="row dir"
-          style="padding-left: {depth * 12 + 8}px"
-          onclick={() => toggle(node.path)}
-        >
+        <button class="row dir" onclick={() => toggle(node.path)}>
           <span class="caret">{expanded[node.path] ? "▾" : "▸"}</span>
           <span class="label">{node.name}</span>
         </button>
@@ -31,9 +27,9 @@
         <button
           class="row file"
           class:active={groups.activeTab?.path === node.path}
-          style="padding-left: {depth * 12 + 24}px"
           onclick={() => groups.openFile(node.path, node.name)}
         >
+          <span class="caret-spacer"></span>
           <span class="label">{node.name}</span>
         </button>
       {/if}
