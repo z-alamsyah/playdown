@@ -26,6 +26,7 @@ export interface Tab {
 
 export type ViewMode = "edit" | "preview";
 export type Theme = "dark" | "light";
+export type Side = "left" | "right";
 export type Direction = "row" | "column";
 export type DropEdge = "center" | "left" | "right" | "top" | "bottom";
 

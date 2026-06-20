@@ -1,10 +1,11 @@
 <script lang="ts">
+  import { onMount, onDestroy } from "svelte";
   import { render } from "../markdown/render";
   import { groups } from "../stores/groups.svelte";
   import { settings } from "../stores/settings.svelte";
   import { openUrl } from "@tauri-apps/plugin-opener";
 
-  let { path }: { path: string } = $props();
+  let { path, groupId }: { path: string; groupId: string } = $props();
 
   let body: HTMLDivElement;
 
@@ -16,6 +17,9 @@
     if (typeof v === "object") return JSON.stringify(v);
     return String(v);
   }
+
+  onMount(() => groups.registerPreview(groupId, body));
+  onDestroy(() => groups.unregisterPreview(groupId));
 
   // Inject rendered HTML, wire external links to the OS browser, render mermaid.
   $effect(() => {

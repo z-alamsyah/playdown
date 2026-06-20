@@ -7,7 +7,9 @@ import type {
   Direction,
   DropEdge,
 } from "../types";
+import { EditorView } from "@codemirror/view";
 import { readFile, writeFile } from "../tauri/fs";
+import type { Heading } from "../markdown/render";
 
 function uid(): string {
   return crypto.randomUUID();
@@ -37,6 +39,10 @@ class GroupsStore {
   groups = $state<EditorGroup[]>([]);
   layout = $state<LayoutNode | null>(null);
   activeGroupId = $state("");
+
+  // Imperative registries (non-reactive) for outline navigation.
+  private editors = new Map<string, EditorView>();
+  private previews = new Map<string, HTMLElement>();
 
   // ---- getters -------------------------------------------------------------
   get activeGroup(): EditorGroup | null {
@@ -160,6 +166,43 @@ class GroupsStore {
     const idx = this.groups.findIndex((g) => g.id === this.activeGroupId);
     const next = (idx + dir + this.groups.length) % this.groups.length;
     this.activeGroupId = this.groups[next].id;
+  }
+
+  // ---- outline navigation --------------------------------------------------
+  registerEditor(groupId: string, view: EditorView) {
+    this.editors.set(groupId, view);
+  }
+  unregisterEditor(groupId: string) {
+    this.editors.delete(groupId);
+  }
+  registerPreview(groupId: string, el: HTMLElement) {
+    this.previews.set(groupId, el);
+  }
+  unregisterPreview(groupId: string) {
+    this.previews.delete(groupId);
+  }
+
+  /** Scroll the active group's view to a heading. */
+  scrollToHeading(h: Heading) {
+    const g = this.activeGroup;
+    if (!g) return;
+    if (g.viewMode === "edit") {
+      const view = this.editors.get(g.id);
+      if (!view) return;
+      const lineNo = Math.min(h.line + 1, view.state.doc.lines);
+      const line = view.state.doc.line(lineNo);
+      view.dispatch({
+        selection: { anchor: line.from },
+        effects: EditorView.scrollIntoView(line.from, { y: "start" }),
+      });
+      view.focus();
+    } else {
+      const el = this.previews.get(g.id);
+      const target = el?.querySelector<HTMLElement>(
+        `#${CSS.escape(h.slug)}`,
+      );
+      target?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
   }
 
   // ---- view mode -----------------------------------------------------------

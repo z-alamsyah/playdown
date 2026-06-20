@@ -2,30 +2,38 @@
   import { onMount, onDestroy } from "svelte";
   import { getCurrentWebview } from "@tauri-apps/api/webview";
   import Sidebar from "./lib/components/Sidebar.svelte";
+  import Outline from "./lib/components/Outline.svelte";
   import Layout from "./lib/components/Layout.svelte";
   import StatusBar from "./lib/components/StatusBar.svelte";
   import QuickOpen from "./lib/components/QuickOpen.svelte";
+  import Settings from "./lib/components/Settings.svelte";
   import { workspace } from "./lib/stores/workspace.svelte";
   import { groups } from "./lib/stores/groups.svelte";
   import { settings } from "./lib/stores/settings.svelte";
+  import { keymap, IS_MAC, type Action } from "./lib/stores/keymap.svelte";
   import { isDir } from "./lib/tauri/fs";
+  import { applyZoom, zoomIn, zoomOut, zoomReset, zoomBy } from "./lib/tauri/zoom";
 
-  let sidebarOpen = $state(true);
   let quickOpen = $state(false);
+  let settingsOpen = $state(false);
   let fileHover = $state(false);
   let unlisten: (() => void) | undefined;
 
+  const outlineSide = $derived(settings.sidebarSide === "left" ? "right" : "left");
   const showWelcome = $derived(
     !workspace.root && !groups.groups.some((g) => g.tabs.length),
   );
 
   onMount(async () => {
     await settings.load();
-    if (settings.lastFolder) {
-      await workspace.setRoot(settings.lastFolder);
-    }
+    keymap.hydrate(settings.keymap);
+    applyZoom();
+
+    if (settings.lastFolder) await workspace.setRoot(settings.lastFolder);
     const restored = await groups.restore(settings.session);
     if (!restored) groups.ensureInitial();
+
+    window.addEventListener("wheel", onWheel, { passive: false });
 
     unlisten = await getCurrentWebview().onDragDropEvent(async (event) => {
       const payload = event.payload;
@@ -55,7 +63,10 @@
     });
   });
 
-  onDestroy(() => unlisten?.());
+  onDestroy(() => {
+    unlisten?.();
+    window.removeEventListener("wheel", onWheel);
+  });
 
   // Persist the editor session (layout + open tabs) whenever it changes.
   $effect(() => {
@@ -64,65 +75,53 @@
     void settings.setSession(snap);
   });
 
+  // Trackpad pinch emits a wheel event with ctrlKey set.
+  function onWheel(e: WheelEvent) {
+    if (e.ctrlKey) {
+      e.preventDefault();
+      zoomBy(e.deltaY > 0 ? -0.05 : 0.05);
+    }
+  }
+
+  function runAction(a: Action) {
+    switch (a) {
+      case "openFolder": void workspace.openFolder(); break;
+      case "quickOpen": quickOpen = true; break;
+      case "save": void groups.saveActive(); break;
+      case "toggleView": groups.toggleViewActive(); break;
+      case "toggleSidebar": settings.toggleSidebar(); break;
+      case "toggleOutline": settings.toggleOutline(); break;
+      case "splitRight": groups.splitActive("right"); break;
+      case "nextTab": groups.nextTab(); break;
+      case "prevTab": groups.prevTab(); break;
+      case "focusNextGroup": groups.focusAdjacentGroup(1); break;
+      case "focusPrevGroup": groups.focusAdjacentGroup(-1); break;
+      case "zoomIn": zoomIn(); break;
+      case "zoomOut": zoomOut(); break;
+      case "zoomReset": zoomReset(); break;
+      case "openSettings": settingsOpen = true; break;
+      case "closeTab": {
+        const g = groups.activeGroup;
+        if (g && g.activeIndex >= 0) groups.closeTab(g.id, g.activeIndex);
+        break;
+      }
+    }
+  }
+
   function handleKeydown(e: KeyboardEvent) {
-    if (quickOpen) return; // palette manages its own keys
+    if (quickOpen || settingsOpen) return;
 
-    if (e.ctrlKey && e.key === "Tab") {
-      e.preventDefault();
-      if (e.shiftKey) groups.prevTab();
-      else groups.nextTab();
-      return;
-    }
-
-    const mod = e.metaKey || e.ctrlKey;
-    if (!mod) return;
-
-    if (e.altKey && (e.key === "ArrowRight" || e.key === "ArrowLeft")) {
-      e.preventDefault();
-      groups.focusAdjacentGroup(e.key === "ArrowRight" ? 1 : -1);
-      return;
-    }
-
-    if (/^[1-9]$/.test(e.key)) {
+    const primary = IS_MAC ? e.metaKey : e.ctrlKey;
+    if (primary && !e.altKey && !e.shiftKey && /^[1-9]$/.test(e.key)) {
       e.preventDefault();
       groups.selectTab(parseInt(e.key, 10) - 1);
       return;
     }
 
-    switch (e.key.toLowerCase()) {
-      case "p":
-        e.preventDefault();
-        quickOpen = true;
-        break;
-      case "s":
-        e.preventDefault();
-        void groups.saveActive();
-        break;
-      case "e":
-        e.preventDefault();
-        groups.toggleViewActive();
-        break;
-      case "b":
-        e.preventDefault();
-        sidebarOpen = !sidebarOpen;
-        break;
-      case "o":
-        e.preventDefault();
-        void workspace.openFolder();
-        break;
-      case "\\":
-        e.preventDefault();
-        groups.splitActive("right");
-        break;
-      case "w": {
-        const g = groups.activeGroup;
-        if (g && g.activeIndex >= 0) {
-          e.preventDefault();
-          groups.closeTab(g.id, g.activeIndex);
-        }
-        break;
-      }
-    }
+    const action = keymap.match(e);
+    if (!action) return;
+    e.preventDefault();
+    runAction(action);
   }
 </script>
 
@@ -131,12 +130,11 @@
 {#if quickOpen}
   <QuickOpen onClose={() => (quickOpen = false)} />
 {/if}
+{#if settingsOpen}
+  <Settings onClose={() => (settingsOpen = false)} />
+{/if}
 
-<div class="app">
-  {#if sidebarOpen}
-    <Sidebar />
-  {/if}
-
+{#snippet mainArea()}
   <main class="main">
     {#if showWelcome}
       <div class="empty">
@@ -151,14 +149,27 @@
           <span><kbd>⌘P</kbd> find file</span>
           <span><kbd>⌘E</kbd> toggle view</span>
           <span><kbd>⌘\</kbd> split</span>
+          <span><kbd>⌘,</kbd> settings</span>
         </div>
         <p class="empty-drop">…or drag a folder onto the window</p>
       </div>
     {:else if groups.layout}
       <Layout node={groups.layout} />
     {/if}
-    <StatusBar />
+    <StatusBar onOpenSettings={() => (settingsOpen = true)} />
   </main>
+{/snippet}
+
+<div class="app">
+  {#if settings.sidebarSide === "left"}
+    {#if settings.sidebarVisible}<Sidebar side="left" />{/if}
+    {@render mainArea()}
+    {#if settings.outlineVisible}<Outline side="right" />{/if}
+  {:else}
+    {#if settings.outlineVisible}<Outline side="left" />{/if}
+    {@render mainArea()}
+    {#if settings.sidebarVisible}<Sidebar side="right" />{/if}
+  {/if}
 
   {#if fileHover}
     <div class="file-drop-overlay">

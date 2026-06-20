@@ -3,8 +3,17 @@ import taskLists from "markdown-it-task-lists";
 import frontMatter from "markdown-it-front-matter";
 import hljs from "highlight.js/lib/common";
 import yaml from "js-yaml";
+import { slugify } from "./slug";
 
 let capturedFrontmatter = "";
+let slugCounts: Record<string, number> = {};
+
+function uniqueSlug(text: string): string {
+  const base = slugify(text) || "section";
+  const n = slugCounts[base] ?? 0;
+  slugCounts[base] = n + 1;
+  return n === 0 ? base : `${base}-${n}`;
+}
 
 const md: MarkdownIt = new MarkdownIt({
   html: false,
@@ -28,6 +37,14 @@ md.use(frontMatter, (fm: string) => {
   capturedFrontmatter = fm;
 });
 
+// Add slug ids to headings (so the outline can jump to them).
+md.renderer.rules.heading_open = (tokens, idx, options, env, self) => {
+  const inline = tokens[idx + 1];
+  const text = inline?.content ?? "";
+  tokens[idx].attrSet("id", uniqueSlug(text));
+  return self.renderToken(tokens, idx, options);
+};
+
 // Render ```mermaid blocks as <div class="mermaid"> for client-side rendering.
 const defaultFence = md.renderer.rules.fence!;
 md.renderer.rules.fence = (tokens, idx, options, env, self) => {
@@ -46,6 +63,7 @@ export interface RenderResult {
 
 export function render(source: string): RenderResult {
   capturedFrontmatter = "";
+  slugCounts = {};
   const html = md.render(source);
 
   let frontmatter: Record<string, unknown> | null = null;
@@ -65,4 +83,62 @@ export function render(source: string): RenderResult {
     frontmatter,
     hasMermaid: /```mermaid/.test(source),
   };
+}
+
+export interface Heading {
+  level: number;
+  text: string;
+  line: number; // 0-based line index in the source
+  slug: string;
+}
+
+/** Extract ATX headings (skipping frontmatter and fenced code). */
+export function outline(source: string): Heading[] {
+  const lines = source.split("\n");
+  const headings: Heading[] = [];
+  const counts: Record<string, number> = {};
+  let inFence = false;
+  let fenceMarker = "";
+  let start = 0;
+
+  // Skip a leading YAML frontmatter block.
+  if (lines[0]?.trim() === "---") {
+    for (let i = 1; i < lines.length; i++) {
+      if (lines[i].trim() === "---") {
+        start = i + 1;
+        break;
+      }
+    }
+  }
+
+  for (let i = start; i < lines.length; i++) {
+    const line = lines[i];
+    const fence = line.match(/^\s*(```|~~~)/);
+    if (fence) {
+      if (!inFence) {
+        inFence = true;
+        fenceMarker = fence[1];
+      } else if (line.trim().startsWith(fenceMarker)) {
+        inFence = false;
+      }
+      continue;
+    }
+    if (inFence) continue;
+
+    const m = line.match(/^(#{1,6})\s+(.+?)\s*#*\s*$/);
+    if (m) {
+      const text = m[2].trim();
+      const base = slugify(text) || "section";
+      const n = counts[base] ?? 0;
+      counts[base] = n + 1;
+      headings.push({
+        level: m[1].length,
+        text,
+        line: i,
+        slug: n === 0 ? base : `${base}-${n}`,
+      });
+    }
+  }
+
+  return headings;
 }

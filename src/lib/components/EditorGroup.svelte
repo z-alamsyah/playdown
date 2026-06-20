@@ -103,9 +103,9 @@
     {#if activeTab}
       {#key activeTab.path + "::" + group.viewMode}
         {#if group.viewMode === "edit"}
-          <EditorPane path={activeTab.path} />
+          <EditorPane path={activeTab.path} groupId={group.id} />
         {:else}
-          <PreviewPane path={activeTab.path} />
+          <PreviewPane path={activeTab.path} groupId={group.id} />
         {/if}
       {/key}
     {:else}

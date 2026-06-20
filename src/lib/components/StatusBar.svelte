@@ -2,6 +2,8 @@
   import { groups } from "../stores/groups.svelte";
   import { settings } from "../stores/settings.svelte";
 
+  let { onOpenSettings }: { onOpenSettings: () => void } = $props();
+
   const tab = $derived(groups.activeTab);
 
   const stats = $derived.by(() => {
@@ -17,11 +19,11 @@
 
 <div class="statusbar">
   <div class="left">
+    <button class="status-btn" title="Toggle sidebar (⌘B)" onclick={() => settings.toggleSidebar()}>▤</button>
+    <button class="status-btn" title="Toggle outline (⌘⇧O)" onclick={() => settings.toggleOutline()}>☰</button>
     {#if tab}
       <span class="file">{tab.name}</span>
       {#if groups.isDirtyPath(tab.path)}<span class="dot" title="Unsaved">●</span>{/if}
-    {:else}
-      <span class="muted">No file open</span>
     {/if}
   </div>
 
@@ -29,8 +31,10 @@
     {#if tab}
       <span class="counts">{stats.words}w · {stats.chars}c · {stats.lines}L</span>
     {/if}
+    <span class="counts">{Math.round(settings.zoom * 100)}%</span>
     <button class="status-btn" title="Toggle theme" onclick={() => settings.toggleTheme()}>
-      {settings.theme === "dark" ? "🌙 Dark" : "☀️ Light"}
+      {settings.theme === "dark" ? "🌙" : "☀️"}
     </button>
+    <button class="status-btn" title="Settings (⌘,)" onclick={onOpenSettings}>⚙</button>
   </div>
 </div>

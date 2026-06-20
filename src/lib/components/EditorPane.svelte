@@ -6,7 +6,7 @@
   import { groups } from "../stores/groups.svelte";
   import { settings } from "../stores/settings.svelte";
 
-  let { path }: { path: string } = $props();
+  let { path, groupId }: { path: string; groupId: string } = $props();
 
   let container: HTMLDivElement;
   let view: EditorView | undefined;
@@ -19,6 +19,7 @@
       onChange: (v) => groups.setDocContent(path, v),
       onSave: () => void groups.saveDoc(path),
     });
+    groups.registerEditor(groupId, view);
     view.focus();
   });
 
@@ -30,7 +31,10 @@
     });
   });
 
-  onDestroy(() => view?.destroy());
+  onDestroy(() => {
+    groups.unregisterEditor(groupId);
+    view?.destroy();
+  });
 </script>
 
 <div class="editor" bind:this={container}></div>

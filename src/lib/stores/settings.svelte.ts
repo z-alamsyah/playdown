@@ -1,14 +1,19 @@
 import { LazyStore } from "@tauri-apps/plugin-store";
-import type { Theme } from "../types";
+import type { Theme, Side } from "../types";
 import type { SessionState } from "./groups.svelte";
 
 const store = new LazyStore("settings.json");
 
-/** Persisted preferences: theme, last folder, and the editor session. */
+/** Persisted preferences: theme, layout, zoom, keymap, and editor session. */
 class Settings {
   theme = $state<Theme>("dark");
   lastFolder = $state<string | null>(null);
   session = $state<SessionState | null>(null);
+  sidebarSide = $state<Side>("left");
+  sidebarVisible = $state(true);
+  outlineVisible = $state(false);
+  zoom = $state(1);
+  keymap = $state<Record<string, string>>({});
   loaded = $state(false);
 
   async load() {
@@ -16,9 +21,19 @@ class Settings {
       const theme = await store.get<Theme>("theme");
       const lastFolder = await store.get<string>("lastFolder");
       const session = await store.get<SessionState>("session");
+      const sidebarSide = await store.get<Side>("sidebarSide");
+      const sidebarVisible = await store.get<boolean>("sidebarVisible");
+      const outlineVisible = await store.get<boolean>("outlineVisible");
+      const zoom = await store.get<number>("zoom");
+      const keymap = await store.get<Record<string, string>>("keymap");
       if (theme) this.theme = theme;
       if (lastFolder) this.lastFolder = lastFolder;
       if (session) this.session = session;
+      if (sidebarSide) this.sidebarSide = sidebarSide;
+      if (typeof sidebarVisible === "boolean") this.sidebarVisible = sidebarVisible;
+      if (typeof outlineVisible === "boolean") this.outlineVisible = outlineVisible;
+      if (typeof zoom === "number") this.zoom = zoom;
+      if (keymap) this.keymap = keymap;
     } catch (e) {
       console.error("Failed to load settings:", e);
     }
@@ -48,6 +63,43 @@ class Settings {
   async setSession(session: SessionState) {
     this.session = session;
     await this.persist("session", session);
+  }
+
+  async setSidebarSide(side: Side) {
+    this.sidebarSide = side;
+    await this.persist("sidebarSide", side);
+  }
+
+  toggleSidebarSide() {
+    void this.setSidebarSide(this.sidebarSide === "left" ? "right" : "left");
+  }
+
+  async setSidebarVisible(v: boolean) {
+    this.sidebarVisible = v;
+    await this.persist("sidebarVisible", v);
+  }
+
+  toggleSidebar() {
+    void this.setSidebarVisible(!this.sidebarVisible);
+  }
+
+  async setOutlineVisible(v: boolean) {
+    this.outlineVisible = v;
+    await this.persist("outlineVisible", v);
+  }
+
+  toggleOutline() {
+    void this.setOutlineVisible(!this.outlineVisible);
+  }
+
+  async setZoom(zoom: number) {
+    this.zoom = zoom;
+    await this.persist("zoom", zoom);
+  }
+
+  async setKeymap(keymap: Record<string, string>) {
+    this.keymap = keymap;
+    await this.persist("keymap", keymap);
   }
 
   private async persist(key: string, value: unknown) {
