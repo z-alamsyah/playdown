@@ -14,3 +14,9 @@ export const readFile = (path: string) => invoke<string>("read_file", { path });
 /** Write a UTF-8 text file (Rust command). */
 export const writeFile = (path: string, contents: string) =>
   invoke<void>("write_file", { path, contents });
+
+/** Create a new empty file (errors if it already exists). */
+export const createFile = (path: string) => invoke<void>("create_file", { path });
+
+/** Create a new directory (errors if it already exists). */
+export const createDir = (path: string) => invoke<void>("create_dir", { path });

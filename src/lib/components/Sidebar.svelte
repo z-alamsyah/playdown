@@ -2,6 +2,7 @@
   import type { Side } from "../types";
   import { workspace } from "../stores/workspace.svelte";
   import { settings } from "../stores/settings.svelte";
+  import { promptNewEntry } from "../fileActions";
   import FileTree from "./FileTree.svelte";
 
   let { side }: { side: Side } = $props();
@@ -14,6 +15,8 @@
     </span>
     <div class="sidebar-actions">
       {#if workspace.root}
+        <button class="icon-btn" title="New file" onclick={() => promptNewEntry(workspace.root!, false)}>🗎</button>
+        <button class="icon-btn" title="New folder" onclick={() => promptNewEntry(workspace.root!, true)}>🗀</button>
         <button class="icon-btn" title="Refresh" onclick={() => workspace.refresh()}>⟳</button>
       {/if}
       <button class="icon-btn" title="Open folder (⌘O)" onclick={() => workspace.openFolder()}>📂</button>

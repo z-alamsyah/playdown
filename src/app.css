@@ -652,6 +652,14 @@ kbd {
 .layout-split.column {
   flex-direction: column;
 }
+/* A cell whose only child is absolutely-positioned won't stretch on the
+   cross axis, so size it explicitly against the split's definite box. */
+.layout-split.row > .layout-cell {
+  height: 100%;
+}
+.layout-split.column > .layout-cell {
+  width: 100%;
+}
 .layout-cell {
   position: relative;
   flex-grow: 1;
@@ -900,6 +908,96 @@ kbd {
   font-size: 12px;
   color: var(--text-faint);
   margin-top: 16px;
+}
+
+/* ============================================================
+   Context menu
+   ============================================================ */
+.ctx-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+}
+.context-menu {
+  position: fixed;
+  z-index: 71;
+  min-width: 184px;
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  padding: 4px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+}
+.ctx-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  color: var(--text);
+  font-size: 13px;
+  padding: 6px 10px;
+  border-radius: 5px;
+}
+.ctx-item:hover {
+  background: var(--bg-hover);
+}
+.ctx-item.danger {
+  color: var(--danger);
+}
+.ctx-sep {
+  height: 1px;
+  background: var(--border);
+  margin: 4px 6px;
+}
+
+/* ============================================================
+   Prompt modal
+   ============================================================ */
+.prompt-modal {
+  width: min(420px, 90vw);
+}
+.prompt-modal input {
+  width: 100%;
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  color: var(--text);
+  padding: 9px 11px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: var(--mono);
+  outline: none;
+}
+.prompt-modal input:focus {
+  border-color: var(--accent);
+}
+.prompt-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 14px;
+}
+.btn-primary {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  padding: 7px 16px;
+  border-radius: 6px;
+  font-size: 13px;
+}
+.btn-primary:hover {
+  filter: brightness(1.1);
+}
+.btn-secondary {
+  background: var(--bg-soft);
+  color: var(--text);
+  border: 1px solid var(--border);
+  padding: 7px 16px;
+  border-radius: 6px;
+  font-size: 13px;
+}
+.btn-secondary:hover {
+  background: var(--bg-hover);
 }
 
 /* ============================================================

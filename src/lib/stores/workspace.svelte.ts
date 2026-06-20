@@ -1,6 +1,6 @@
 import { open } from "@tauri-apps/plugin-dialog";
 import type { FileNode, FlatFile } from "../types";
-import { listDirTree } from "../tauri/fs";
+import { listDirTree, createFile, createDir } from "../tauri/fs";
 import { settings } from "./settings.svelte";
 
 /** Holds the currently opened folder and its markdown file tree. */
@@ -52,6 +52,28 @@ class Workspace {
 
   async refresh() {
     if (this.root) await this.setRoot(this.root);
+  }
+
+  /** Path relative to the workspace root (for "copy relative path"). */
+  relativeOf(path: string): string {
+    if (!this.root) return path;
+    const root = this.root.replace(/[/\\]+$/, "");
+    return path.startsWith(root) ? path.slice(root.length + 1) : path;
+  }
+
+  /** Create a file or folder named `name` inside `parentDir`; returns full path. */
+  async createEntry(parentDir: string, name: string, isDir: boolean): Promise<string | null> {
+    const sep = parentDir.includes("\\") ? "\\" : "/";
+    const full = parentDir.replace(/[/\\]+$/, "") + sep + name.trim();
+    try {
+      if (isDir) await createDir(full);
+      else await createFile(full);
+      await this.refresh();
+      return full;
+    } catch (e) {
+      console.error("Failed to create entry:", e);
+      return null;
+    }
   }
 }
 

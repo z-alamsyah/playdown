@@ -7,6 +7,8 @@
   import StatusBar from "./lib/components/StatusBar.svelte";
   import QuickOpen from "./lib/components/QuickOpen.svelte";
   import Settings from "./lib/components/Settings.svelte";
+  import ContextMenu from "./lib/components/ContextMenu.svelte";
+  import PromptModal from "./lib/components/PromptModal.svelte";
   import { workspace } from "./lib/stores/workspace.svelte";
   import { groups } from "./lib/stores/groups.svelte";
   import { settings } from "./lib/stores/settings.svelte";
@@ -136,6 +138,9 @@
 {#if settingsOpen}
   <Settings onClose={() => (settingsOpen = false)} />
 {/if}
+
+<ContextMenu />
+<PromptModal />
 
 {#snippet mainArea()}
   <main class="main">
