@@ -86,12 +86,13 @@ button {
 .titlebar {
   height: 32px;
   flex-shrink: 0;
-  background: #ff3e00;
+  background: var(--titlebar-bg, #ff3e00);
+  color: var(--titlebar-fg, #fff);
+  border-bottom: 1px solid var(--border);
   display: flex;
   align-items: center;
   gap: 6px;
   padding: 0 12px 0 78px;
-  color: #fff;
   font-size: 12px;
   user-select: none;
   overflow: hidden;
@@ -1221,6 +1222,23 @@ kbd {
 .seg button.on {
   background: var(--accent);
   color: #fff;
+}
+.swatches {
+  display: flex;
+  gap: 7px;
+}
+.swatch {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  background: var(--sw);
+  padding: 0;
+  cursor: pointer;
+}
+.swatch.on {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
 }
 .seg button:hover:not(.on) {
   background: var(--bg-hover);

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { settings } from "../stores/settings.svelte";
+  import { settings, TITLEBAR_COLORS } from "../stores/settings.svelte";
   import {
     keymap,
     ACTIONS,
@@ -8,6 +8,9 @@
     type Action,
   } from "../stores/keymap.svelte";
   import { zoomIn, zoomOut, zoomReset } from "../tauri/zoom";
+  import type { TitlebarColor } from "../types";
+
+  const titlebarColors = Object.keys(TITLEBAR_COLORS) as TitlebarColor[];
 
   let { onClose }: { onClose: () => void } = $props();
 
@@ -45,6 +48,21 @@
         <div class="seg">
           <button class:on={settings.theme === "dark"} onclick={() => settings.setTheme("dark")}>🌙 Dark</button>
           <button class:on={settings.theme === "light"} onclick={() => settings.setTheme("light")}>☀️ Light</button>
+        </div>
+      </div>
+      <div class="setting-row">
+        <span>Title bar color</span>
+        <div class="swatches">
+          {#each titlebarColors as c}
+            <button
+              class="swatch"
+              class:on={settings.titlebarColor === c}
+              style="--sw: {TITLEBAR_COLORS[c][0]}"
+              title={c}
+              aria-label={c}
+              onclick={() => settings.setTitlebarColor(c)}
+            ></button>
+          {/each}
         </div>
       </div>
       <div class="setting-row">

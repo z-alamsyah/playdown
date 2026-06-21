@@ -10,6 +10,38 @@ Built for people who live in markdown all day — skills, agents, PRDs, manifest
 | RAM (idle) | ~70–100 MB | 300–500+ MB |
 | Startup | < 0.5s | 1–3s |
 
+🌐 **[Landing page & download →](https://z-alamsyah.github.io/playdown/)**
+
+## Install
+
+### macOS — one line (recommended)
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/z-alamsyah/playdown/main/install.sh | bash
+```
+
+This downloads the latest `.dmg`, copies **Playdown** to `/Applications`, clears the quarantine flag (the app is unsigned), and launches it.
+
+### macOS — manual (.dmg)
+
+1. Download the latest `.dmg` from [Releases](https://github.com/z-alamsyah/playdown/releases/latest).
+2. Open it, drag **Playdown** → **Applications**.
+3. First launch only: right-click **Playdown** → **Open** (it's unsigned, so Gatekeeper asks once).
+
+### Windows / Linux
+
+Grab the installer for your platform from [Releases](https://github.com/z-alamsyah/playdown/releases/latest) (`.msi` / `.AppImage` / `.deb`), produced by the release CI.
+
+### From source
+
+```bash
+git clone https://github.com/z-alamsyah/playdown.git
+cd playdown
+pnpm install
+pnpm tauri build      # bundle for your OS
+# or: pnpm tauri dev   # run in dev mode
+```
+
 ## Features
 
 - 📂 **Folder tree** — open a folder (or drag one onto the window); shows all files including dotfiles, with nested indent guides

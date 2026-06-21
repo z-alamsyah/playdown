@@ -1,0 +1,319 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Playdown — a markdown editor without the IDE tax</title>
+    <meta name="description" content="A ~5 MB cross-platform markdown editor & viewer. Splits, outline, JSON, images, themes — opens before your code editor finishes loading." />
+    <meta property="og:title" content="Playdown" />
+    <meta property="og:description" content="A ~5 MB markdown editor that opens before your code editor finishes loading." />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%23ff3e00'/%3E%3Ctext y='72' x='50' font-size='60' text-anchor='middle'%3E%F0%9F%93%9D%3C/text%3E%3C/svg%3E" />
+    <style>
+      :root {
+        --orange: #ff3e00;
+        --bg: #0c0d10;
+        --bg2: #131419;
+        --card: #16171d;
+        --border: #25272f;
+        --text: #e7e8ec;
+        --muted: #9aa0ab;
+        --faint: #6b7280;
+        --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
+        --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      }
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      html { scroll-behavior: smooth; }
+      body {
+        font-family: var(--sans);
+        background: var(--bg);
+        color: var(--text);
+        line-height: 1.6;
+        -webkit-font-smoothing: antialiased;
+        overflow-x: hidden;
+      }
+      a { color: inherit; text-decoration: none; }
+      .wrap { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+
+      /* background glow */
+      body::before {
+        content: "";
+        position: fixed;
+        top: -30vh; left: 50%;
+        width: 90vw; height: 90vh;
+        transform: translateX(-50%);
+        background: radial-gradient(closest-side, rgba(255, 62, 0, 0.18), transparent 70%);
+        pointer-events: none;
+        z-index: 0;
+      }
+
+      /* nav */
+      nav {
+        position: sticky; top: 0; z-index: 50;
+        backdrop-filter: blur(10px);
+        background: rgba(12, 13, 16, 0.7);
+        border-bottom: 1px solid var(--border);
+      }
+      nav .wrap { display: flex; align-items: center; justify-content: space-between; height: 60px; }
+      .brand { display: flex; align-items: center; gap: 9px; font-weight: 800; font-size: 18px; letter-spacing: -0.01em; }
+      .brand .dot { width: 22px; height: 22px; border-radius: 6px; background: var(--orange); display: grid; place-items: center; font-size: 13px; }
+      .nav-links { display: flex; gap: 26px; align-items: center; font-size: 14px; color: var(--muted); }
+      .nav-links a:hover { color: var(--text); }
+      .nav-cta { color: var(--orange) !important; font-weight: 600; }
+      @media (max-width: 680px) { .nav-links a:not(.nav-cta) { display: none; } }
+
+      /* hero */
+      header { position: relative; z-index: 1; text-align: center; padding: 110px 0 70px; }
+      .eyebrow {
+        display: inline-block; font-family: var(--mono); font-size: 12px; letter-spacing: 0.12em;
+        text-transform: uppercase; color: var(--orange);
+        border: 1px solid rgba(255, 62, 0, 0.35); border-radius: 100px; padding: 5px 14px; margin-bottom: 26px;
+        animation: fade-up 0.6s both;
+      }
+      h1 {
+        font-size: clamp(40px, 7vw, 76px); line-height: 1.02; letter-spacing: -0.03em; font-weight: 850;
+        animation: fade-up 0.6s 0.05s both;
+      }
+      h1 .accent { color: var(--orange); }
+      .sub {
+        max-width: 620px; margin: 24px auto 0; font-size: clamp(16px, 2.2vw, 20px); color: var(--muted);
+        animation: fade-up 0.6s 0.1s both;
+      }
+      .cta-row { display: flex; gap: 14px; justify-content: center; margin-top: 38px; flex-wrap: wrap; animation: fade-up 0.6s 0.15s both; }
+      .btn {
+        display: inline-flex; align-items: center; gap: 9px; padding: 13px 26px; border-radius: 10px;
+        font-weight: 650; font-size: 15px; cursor: pointer; border: 1px solid transparent; transition: transform 0.12s, filter 0.12s, background 0.12s;
+      }
+      .btn:hover { transform: translateY(-2px); }
+      .btn-primary { background: var(--orange); color: #fff; }
+      .btn-primary:hover { filter: brightness(1.1); }
+      .btn-ghost { background: transparent; border-color: var(--border); color: var(--text); }
+      .btn-ghost:hover { background: var(--bg2); }
+      .stats { display: flex; gap: 40px; justify-content: center; margin-top: 54px; flex-wrap: wrap; animation: fade-up 0.6s 0.2s both; }
+      .stat .n { font-size: 30px; font-weight: 800; color: var(--text); }
+      .stat .l { font-size: 13px; color: var(--faint); font-family: var(--mono); }
+
+      /* app mockup */
+      .mock-wrap { position: relative; z-index: 1; margin: 30px auto 0; max-width: 900px; padding: 0 24px; animation: fade-up 0.7s 0.25s both; }
+      .mock {
+        border: 1px solid var(--border); border-radius: 12px; overflow: hidden;
+        box-shadow: 0 40px 120px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.02);
+        background: var(--bg2);
+      }
+      .mock-title { height: 30px; background: var(--orange); display: flex; align-items: center; padding-left: 64px; gap: 7px; color: #fff; font-size: 12px; font-weight: 700; position: relative; }
+      .mock-title .lights { position: absolute; left: 12px; display: flex; gap: 7px; }
+      .mock-title .lights i { width: 11px; height: 11px; border-radius: 50%; display: block; }
+      .mock-body { display: grid; grid-template-columns: 150px 1fr 150px; height: 320px; font-size: 12px; }
+      .mock-side { background: #121319; border-right: 1px solid var(--border); padding: 10px; color: var(--muted); }
+      .mock-side.r { border-right: none; border-left: 1px solid var(--border); }
+      .mock-side .h { font-size: 10px; letter-spacing: 0.08em; color: var(--faint); text-transform: uppercase; margin-bottom: 8px; }
+      .mock-side .row { padding: 3px 4px; border-radius: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .mock-side .row.on { background: rgba(255, 62, 0, 0.14); color: var(--orange); }
+      .mock-main { padding: 18px 22px; overflow: hidden; }
+      .mock-main h2 { font-size: 19px; color: var(--text); border-bottom: 1px solid var(--border); padding-bottom: 8px; margin-bottom: 12px; letter-spacing: -0.01em; }
+      .mock-main p, .mock-main li { color: var(--muted); margin-bottom: 7px; }
+      .mock-main code { font-family: var(--mono); background: #0e0f13; padding: 1px 6px; border-radius: 4px; color: #e0a96d; }
+      .mock-main .tag { color: var(--orange); font-family: var(--mono); }
+      @media (max-width: 680px) { .mock-body { grid-template-columns: 1fr; } .mock-side { display: none; } }
+
+      /* sections */
+      section.block { position: relative; z-index: 1; padding: 80px 0; }
+      .section-head { text-align: center; margin-bottom: 50px; }
+      .section-head h2 { font-size: clamp(28px, 4vw, 40px); letter-spacing: -0.02em; }
+      .section-head p { color: var(--muted); margin-top: 10px; }
+
+      .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+      @media (max-width: 860px) { .grid { grid-template-columns: repeat(2, 1fr); } }
+      @media (max-width: 560px) { .grid { grid-template-columns: 1fr; } }
+      .feat {
+        background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 22px;
+        transition: transform 0.15s, border-color 0.15s;
+      }
+      .feat:hover { transform: translateY(-3px); border-color: rgba(255, 62, 0, 0.4); }
+      .feat .ico { font-size: 22px; margin-bottom: 12px; }
+      .feat h3 { font-size: 16px; margin-bottom: 6px; letter-spacing: -0.01em; }
+      .feat p { font-size: 14px; color: var(--muted); }
+
+      /* install */
+      .install { text-align: center; }
+      .cmd {
+        display: flex; align-items: center; gap: 12px; max-width: 720px; margin: 0 auto;
+        background: #0a0b0e; border: 1px solid var(--border); border-radius: 12px; padding: 16px 18px;
+        font-family: var(--mono); font-size: 14px; text-align: left;
+      }
+      .cmd .prompt { color: var(--orange); }
+      .cmd code { flex: 1; overflow-x: auto; white-space: nowrap; color: var(--text); }
+      .cmd button {
+        background: var(--bg2); border: 1px solid var(--border); color: var(--muted); border-radius: 7px;
+        padding: 6px 12px; font-size: 12px; cursor: pointer; flex-shrink: 0; font-family: var(--sans);
+      }
+      .cmd button:hover { color: var(--text); border-color: var(--orange); }
+      .alt-installs { margin-top: 20px; font-size: 14px; color: var(--faint); }
+      .alt-installs a { color: var(--orange); }
+
+      /* origin */
+      .origin { max-width: 720px; margin: 0 auto; text-align: center; }
+      .origin p { color: var(--muted); font-size: 17px; }
+      .origin .big { color: var(--text); font-size: clamp(22px, 3.5vw, 30px); font-weight: 750; letter-spacing: -0.02em; line-height: 1.3; margin-bottom: 20px; }
+
+      /* shortcuts */
+      .keys { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px 40px; max-width: 720px; margin: 0 auto; }
+      @media (max-width: 560px) { .keys { grid-template-columns: 1fr; } }
+      .key-row { display: flex; align-items: center; justify-content: space-between; padding: 9px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
+      .key-row .act { color: var(--muted); }
+      kbd { font-family: var(--mono); font-size: 12px; background: var(--bg2); border: 1px solid var(--border); border-radius: 5px; padding: 2px 8px; color: var(--text); }
+
+      footer { position: relative; z-index: 1; border-top: 1px solid var(--border); padding: 40px 0; text-align: center; color: var(--faint); font-size: 14px; }
+      footer a { color: var(--muted); }
+      footer a:hover { color: var(--orange); }
+
+      @keyframes fade-up { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+    </style>
+  </head>
+  <body>
+    <nav>
+      <div class="wrap">
+        <div class="brand"><span class="dot">📝</span> Playdown</div>
+        <div class="nav-links">
+          <a href="#features">Features</a>
+          <a href="#install">Install</a>
+          <a href="https://github.com/z-alamsyah/playdown">GitHub</a>
+          <a class="nav-cta" href="#install">Download</a>
+        </div>
+      </div>
+    </nav>
+
+    <header>
+      <div class="wrap">
+        <span class="eyebrow">~5 MB · Mac · Windows · Linux</span>
+        <h1>Markdown,<br />without the <span class="accent">IDE tax</span>.</h1>
+        <p class="sub">
+          A featherweight markdown editor &amp; viewer that opens before your code editor
+          finishes loading. Splits, outline, JSON, images — all in a 5 MB app that sips RAM.
+        </p>
+        <div class="cta-row">
+          <a class="btn btn-primary" href="#install">↓ Download for macOS</a>
+          <a class="btn btn-ghost" href="https://github.com/z-alamsyah/playdown">★ Star on GitHub</a>
+        </div>
+        <div class="stats">
+          <div class="stat"><div class="n">~5 MB</div><div class="l">app bundle</div></div>
+          <div class="stat"><div class="n">~70 MB</div><div class="l">idle RAM</div></div>
+          <div class="stat"><div class="n">&lt; 0.5s</div><div class="l">cold start</div></div>
+        </div>
+      </div>
+    </header>
+
+    <div class="mock-wrap">
+      <div class="mock">
+        <div class="mock-title">
+          <span class="lights"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span>
+          📝 Playdown — rfc.md
+        </div>
+        <div class="mock-body">
+          <div class="mock-side">
+            <div class="h">Outline</div>
+            <div class="row">Summary</div>
+            <div class="row">Architecture</div>
+            <div class="row">API Spec</div>
+            <div class="row">Pseudo-Code</div>
+          </div>
+          <div class="mock-main">
+            <h2>RFC — Procurement Notification</h2>
+            <p><span class="tag">type:</span> rfc &nbsp; <span class="tag">status:</span> approved</p>
+            <p>Add transactional <code>email</code> notifications across the eProc domains.</p>
+            <p>☑ Folder tree &nbsp; ☑ Split panes &nbsp; ☐ Ship it</p>
+            <p><code>pnpm tauri build</code></p>
+          </div>
+          <div class="mock-side r">
+            <div class="h">Files</div>
+            <div class="row">.claude</div>
+            <div class="row on">rfc.md</div>
+            <div class="row">prd.md</div>
+            <div class="row">spec.json</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <section class="block" id="features">
+      <div class="wrap">
+        <div class="section-head">
+          <h2>Everything you need. Nothing you don't.</h2>
+          <p>Built for people who live in markdown all day — skills, agents, PRDs, manifests.</p>
+        </div>
+        <div class="grid">
+          <div class="feat"><div class="ico">🪟</div><h3>Split panes</h3><p>VSCode-style splits — drag a tab to any edge, resize, nest. Edit left, preview right.</p></div>
+          <div class="feat"><div class="ico">🔎</div><h3>Quick open</h3><p>Fuzzy file finder on <kbd>⌘P</kbd>. Jump anywhere instantly.</p></div>
+          <div class="feat"><div class="ico">🧭</div><h3>Live outline</h3><p>Heading navigation opposite the sidebar. Click to jump.</p></div>
+          <div class="feat"><div class="ico">🧩</div><h3>Frontmatter-aware</h3><p>YAML frontmatter folded in the editor, rendered as a card in preview.</p></div>
+          <div class="feat"><div class="ico">🔡</div><h3>JSON tools</h3><p>Syntax highlighting + one-key format. Highlighted JSON preview.</p></div>
+          <div class="feat"><div class="ico">🖼️</div><h3>Image preview</h3><p>PNG, JPG, SVG, GIF &amp; more — rendered inline, no bloat.</p></div>
+          <div class="feat"><div class="ico">🧜</div><h3>Mermaid + GFM</h3><p>Diagrams, tables, task lists, code highlighting in preview.</p></div>
+          <div class="feat"><div class="ico">⚙️</div><h3>Make it yours</h3><p>Themes, sidebar side, zoom, rebindable shortcuts, colored title bar.</p></div>
+          <div class="feat"><div class="ico">🪶</div><h3>Genuinely light</h3><p>Tauri + system WebView. No bundled Chromium. ~5 MB, ~70 MB RAM.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="block install" id="install">
+      <div class="wrap">
+        <div class="section-head">
+          <h2>Install in one line</h2>
+          <p>macOS — copy, paste, done.</p>
+        </div>
+        <div class="cmd">
+          <span class="prompt">$</span>
+          <code id="cmd">curl -fsSL https://raw.githubusercontent.com/z-alamsyah/playdown/main/install.sh | bash</code>
+          <button onclick="copyCmd()" id="copy">Copy</button>
+        </div>
+        <p class="alt-installs">
+          Prefer manual? <a href="https://github.com/z-alamsyah/playdown/releases/latest">Download the .dmg</a> &nbsp;·&nbsp;
+          Windows / Linux builds on the <a href="https://github.com/z-alamsyah/playdown/releases">releases page</a>.
+        </p>
+      </div>
+    </section>
+
+    <section class="block">
+      <div class="wrap origin">
+        <p class="big">Built day-by-day with Claude Code — from "this feels overkill" to a shipping app.</p>
+        <p>
+          Started as a gripe: full IDEs eating hundreds of MB just to read a <code style="font-family:var(--mono);color:#e0a96d">.md</code> file.
+          A few iterations later: editor groups, drag-to-split, outline, JSON, images, a configurable orange title bar — and an installer.
+          Open source, MIT.
+        </p>
+      </div>
+    </section>
+
+    <section class="block">
+      <div class="wrap">
+        <div class="section-head"><h2>Keyboard-first</h2><p>All rebindable in Settings.</p></div>
+        <div class="keys">
+          <div class="key-row"><span class="act">Quick open</span><kbd>⌘P</kbd></div>
+          <div class="key-row"><span class="act">Toggle edit / preview</span><kbd>⌘E</kbd></div>
+          <div class="key-row"><span class="act">Split right</span><kbd>⌘\</kbd></div>
+          <div class="key-row"><span class="act">Toggle sidebar</span><kbd>⌘B</kbd></div>
+          <div class="key-row"><span class="act">Toggle outline</span><kbd>⌘⇧O</kbd></div>
+          <div class="key-row"><span class="act">Format JSON</span><kbd>⌘⇧F</kbd></div>
+          <div class="key-row"><span class="act">Cycle tabs</span><kbd>Ctrl ⇥</kbd></div>
+          <div class="key-row"><span class="act">Settings</span><kbd>⌘,</kbd></div>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      <div class="wrap">
+        <p>📝 <strong>Playdown</strong> — MIT · <a href="https://github.com/z-alamsyah/playdown">github.com/z-alamsyah/playdown</a></p>
+      </div>
+    </footer>
+
+    <script>
+      function copyCmd() {
+        const text = document.getElementById("cmd").textContent;
+        navigator.clipboard.writeText(text).then(() => {
+          const b = document.getElementById("copy");
+          b.textContent = "Copied!";
+          setTimeout(() => (b.textContent = "Copy"), 1600);
+        });
+      }
+    </script>
+  </body>
+</html>

@@ -1,8 +1,17 @@
 import { LazyStore } from "@tauri-apps/plugin-store";
-import type { Theme, Side } from "../types";
+import type { Theme, Side, TitlebarColor } from "../types";
 import type { SessionState } from "./groups.svelte";
 
 const store = new LazyStore("settings.json");
+
+/** Title bar palette → [background, foreground]. "plain" follows the theme. */
+export const TITLEBAR_COLORS: Record<TitlebarColor, [string, string]> = {
+  orange: ["#ff3e00", "#ffffff"],
+  plain: ["var(--bg-elev)", "var(--text)"],
+  skyblue: ["#0ea5e9", "#06283d"],
+  darkred: ["#991b1b", "#ffffff"],
+  green: ["#15803d", "#ffffff"],
+};
 
 /** Persisted preferences: theme, layout, zoom, keymap, and editor session. */
 class Settings {
@@ -14,6 +23,7 @@ class Settings {
   outlineVisible = $state(false);
   zoom = $state(1);
   keymap = $state<Record<string, string>>({});
+  titlebarColor = $state<TitlebarColor>("orange");
   loaded = $state(false);
 
   async load() {
@@ -26,6 +36,8 @@ class Settings {
       const outlineVisible = await store.get<boolean>("outlineVisible");
       const zoom = await store.get<number>("zoom");
       const keymap = await store.get<Record<string, string>>("keymap");
+      const titlebarColor = await store.get<TitlebarColor>("titlebarColor");
+      if (titlebarColor) this.titlebarColor = titlebarColor;
       if (theme) this.theme = theme;
       if (lastFolder) this.lastFolder = lastFolder;
       if (session) this.session = session;
@@ -43,6 +55,19 @@ class Settings {
 
   apply() {
     document.documentElement.dataset.theme = this.theme;
+    this.applyTitlebar();
+  }
+
+  applyTitlebar() {
+    const [bg, fg] = TITLEBAR_COLORS[this.titlebarColor] ?? TITLEBAR_COLORS.orange;
+    document.documentElement.style.setProperty("--titlebar-bg", bg);
+    document.documentElement.style.setProperty("--titlebar-fg", fg);
+  }
+
+  async setTitlebarColor(color: TitlebarColor) {
+    this.titlebarColor = color;
+    this.applyTitlebar();
+    await this.persist("titlebarColor", color);
   }
 
   async setTheme(theme: Theme) {
