@@ -55,7 +55,7 @@ pnpm tauri build      # bundle for your OS
 - 🧜 **Mermaid** — diagrams rendered in preview (lazy-loaded)
 - 🔡 **JSON** — syntax highlighting, `⌘⇧F` to format/pretty-print, highlighted JSON preview
 - 🖼️ **Image preview** — png/jpg/gif/webp/svg/bmp/ico/avif rendered inline
-- 🗃️ **File ops** — new file / new folder (sidebar buttons or right-click), delete to Trash, copy full / relative path (right-click or select + `⌘C`)
+- 🗃️ **File ops** — new file / new folder (sidebar buttons or right-click), rename (right-click or `Enter` on a selection), delete to Trash, copy full / relative path (right-click or select + `⌘C`)
 - 🖥️ **Built-in terminal** — multi-session, VSCode-style management (new / switch / kill), resizable bottom panel, `` Ctrl+` `` to toggle (xterm.js lazy-loaded — zero idle cost)
 - ⌨️ **`playdown` CLI** — `playdown .` opens a folder from your terminal; `playdown --version` / `--help` (install from Settings → Command line)
 - 🔍 **Zoom** — `⌘=` / `⌘-` / `⌘0` or trackpad pinch
