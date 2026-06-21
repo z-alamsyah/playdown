@@ -61,6 +61,7 @@ pnpm tauri build      # bundle for your OS
 - 🔍 **Zoom** — `⌘=` / `⌘-` / `⌘0` or trackpad pinch
 - ⚙️ **Settings** (`⌘,`) — theme, sidebar side (left/right), zoom, and **fully rebindable shortcuts**
 - 🌗 **Dark / light themes**, window state, and full session (layout + open tabs) persisted across restarts
+- 🆓 **No sign-in, free forever** — no account, no telemetry, no subscription. Open source (MIT)
 
 ## Keyboard shortcuts
 
