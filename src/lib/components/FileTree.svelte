@@ -16,6 +16,7 @@
   function onContext(e: MouseEvent, node: FileNode) {
     e.preventDefault();
     e.stopPropagation();
+    ui.selectedPath = node.path;
     ui.showMenu(e.clientX, e.clientY, nodeMenuItems(node));
   }
 </script>
@@ -26,7 +27,11 @@
       {#if node.is_dir}
         <button
           class="row dir"
-          onclick={() => toggle(node.path)}
+          class:selected={ui.selectedPath === node.path}
+          onclick={() => {
+            ui.selectedPath = node.path;
+            toggle(node.path);
+          }}
           oncontextmenu={(e) => onContext(e, node)}
         >
           <span class="caret">{expanded[node.path] ? "▾" : "▸"}</span>
@@ -39,7 +44,11 @@
         <button
           class="row file"
           class:active={groups.activeTab?.path === node.path}
-          onclick={() => groups.openFile(node.path, node.name)}
+          class:selected={ui.selectedPath === node.path}
+          onclick={() => {
+            ui.selectedPath = node.path;
+            groups.openFile(node.path, node.name);
+          }}
           oncontextmenu={(e) => onContext(e, node)}
         >
           <span class="caret-spacer"></span>

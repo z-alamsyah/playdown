@@ -32,6 +32,7 @@
       <span class="counts">{stats.words}w · {stats.chars}c · {stats.lines}L</span>
     {/if}
     <span class="counts">{Math.round(settings.zoom * 100)}%</span>
+    <button class="status-btn" title="Toggle terminal (Ctrl+`)" onclick={() => settings.toggleTerminal()}>❯_</button>
     <button class="status-btn" title="Toggle theme" onclick={() => settings.toggleTheme()}>
       {settings.theme === "dark" ? "🌙" : "☀️"}
     </button>

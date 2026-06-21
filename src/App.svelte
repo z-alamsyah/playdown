@@ -1,6 +1,8 @@
 <script lang="ts">
   import { onMount, onDestroy } from "svelte";
   import { getCurrentWebview } from "@tauri-apps/api/webview";
+  import { invoke } from "@tauri-apps/api/core";
+  import { listen } from "@tauri-apps/api/event";
   import Sidebar from "./lib/components/Sidebar.svelte";
   import Outline from "./lib/components/Outline.svelte";
   import Layout from "./lib/components/Layout.svelte";
@@ -9,6 +11,7 @@
   import Settings from "./lib/components/Settings.svelte";
   import ContextMenu from "./lib/components/ContextMenu.svelte";
   import PromptModal from "./lib/components/PromptModal.svelte";
+  import TerminalPanel from "./lib/components/TerminalPanel.svelte";
   import { workspace } from "./lib/stores/workspace.svelte";
   import { groups } from "./lib/stores/groups.svelte";
   import { settings } from "./lib/stores/settings.svelte";
@@ -20,6 +23,7 @@
   let settingsOpen = $state(false);
   let fileHover = $state(false);
   let unlisten: (() => void) | undefined;
+  let unlistenCli: (() => void) | undefined;
 
   const outlineSide = $derived(settings.sidebarSide === "left" ? "right" : "left");
   const showWelcome = $derived(
@@ -34,6 +38,17 @@
     if (settings.lastFolder) await workspace.setRoot(settings.lastFolder);
     const restored = await groups.restore(settings.session);
     if (!restored) groups.ensureInitial();
+
+    // CLI: `playdown <dir>` — open the launch folder, and respond to later invocations.
+    try {
+      const launch = await invoke<string | null>("get_launch_path");
+      if (launch) await workspace.setRoot(launch);
+    } catch {
+      /* not launched via CLI */
+    }
+    unlistenCli = await listen<string>("cli-open", (e) => {
+      if (e.payload) void workspace.setRoot(e.payload);
+    });
 
     window.addEventListener("wheel", onWheel, { passive: false });
 
@@ -67,6 +82,7 @@
 
   onDestroy(() => {
     unlisten?.();
+    unlistenCli?.();
     window.removeEventListener("wheel", onWheel);
   });
 
@@ -105,6 +121,7 @@
       case "zoomOut": zoomOut(); break;
       case "zoomReset": zoomReset(); break;
       case "formatDoc": groups.formatActive(); break;
+      case "toggleTerminal": settings.toggleTerminal(); break;
       case "openSettings": settingsOpen = true; break;
       case "closeTab": {
         const g = groups.activeGroup;
@@ -167,6 +184,9 @@
       <Layout node={groups.layout} />
     {/if}
     </div>
+    {#if settings.terminalOpen}
+      <TerminalPanel />
+    {/if}
     <StatusBar onOpenSettings={() => (settingsOpen = true)} />
   </main>
 {/snippet}

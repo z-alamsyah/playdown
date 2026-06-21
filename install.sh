@@ -39,5 +39,25 @@ hdiutil detach "$MNT" -quiet
 # App is unsigned — clear the quarantine flag so it opens without a prompt.
 xattr -dr com.apple.quarantine "/Applications/$APP.app" 2>/dev/null || true
 
+# Install the `playdown` CLI command into a PATH directory.
+for dir in /opt/homebrew/bin /usr/local/bin "$HOME/.local/bin"; do
+  mkdir -p "$dir" 2>/dev/null || true
+  if [ -d "$dir" ] && [ -w "$dir" ]; then
+    cat > "$dir/playdown" <<'WRAP'
+#!/bin/sh
+BIN="/Applications/Playdown.app/Contents/MacOS/playdown"
+case "$1" in
+  --version|-v|--help|-h) exec "$BIN" "$1" ;;
+esac
+target="${1:-.}"
+abs=$(cd "$target" 2>/dev/null && pwd) || abs="$target"
+open -a Playdown --args "$abs"
+WRAP
+    chmod +x "$dir/playdown"
+    echo "==> Installed 'playdown' command → $dir/playdown"
+    break
+  fi
+done
+
 echo "==> Done. Launching $APP."
 open "/Applications/$APP.app"

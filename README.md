@@ -55,7 +55,9 @@ pnpm tauri build      # bundle for your OS
 - 🧜 **Mermaid** — diagrams rendered in preview (lazy-loaded)
 - 🔡 **JSON** — syntax highlighting, `⌘⇧F` to format/pretty-print, highlighted JSON preview
 - 🖼️ **Image preview** — png/jpg/gif/webp/svg/bmp/ico/avif rendered inline
-- 🗃️ **File ops** — new file / new folder (sidebar buttons or right-click), delete to Trash, copy full / relative path
+- 🗃️ **File ops** — new file / new folder (sidebar buttons or right-click), delete to Trash, copy full / relative path (right-click or select + `⌘C`)
+- 🖥️ **Built-in terminal** — multi-session, VSCode-style management (new / switch / kill), resizable bottom panel, `` Ctrl+` `` to toggle (xterm.js lazy-loaded — zero idle cost)
+- ⌨️ **`playdown` CLI** — `playdown .` opens a folder from your terminal; `playdown --version` / `--help` (install from Settings → Command line)
 - 🔍 **Zoom** — `⌘=` / `⌘-` / `⌘0` or trackpad pinch
 - ⚙️ **Settings** (`⌘,`) — theme, sidebar side (left/right), zoom, and **fully rebindable shortcuts**
 - 🌗 **Dark / light themes**, window state, and full session (layout + open tabs) persisted across restarts
@@ -74,6 +76,7 @@ All shortcuts are rebindable in Settings (`⌘,`). Defaults:
 | `⌘B` | Toggle sidebar |
 | `⌘⇧O` | Toggle outline |
 | `⌘⇧F` | Format JSON |
+| `` Ctrl+` `` | Toggle terminal |
 | `⌘W` | Close tab |
 | `⌘1`–`⌘9` | Select tab |
 | `Ctrl+Tab` / `Ctrl+⇧+Tab` | Cycle tabs |

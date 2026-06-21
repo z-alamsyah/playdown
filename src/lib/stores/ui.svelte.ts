@@ -19,10 +19,12 @@ export interface PromptState {
   onSubmit: (value: string) => void;
 }
 
-/** Transient UI: context menu and prompt modal. */
+/** Transient UI: context menu, prompt modal, sidebar selection. */
 class UI {
   menu = $state<ContextMenuState | null>(null);
   prompt = $state<PromptState | null>(null);
+  /** Currently selected node in the sidebar tree (for ⌘C copy path). */
+  selectedPath = $state<string | null>(null);
 
   showMenu(x: number, y: number, items: MenuItem[]) {
     this.menu = { x, y, items };

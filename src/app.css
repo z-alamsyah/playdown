@@ -308,6 +308,12 @@ button {
   background: var(--accent-soft);
   color: var(--accent);
 }
+.row.selected {
+  background: var(--bg-hover);
+}
+.row.file.active.selected {
+  background: var(--accent-soft);
+}
 
 /* ============================================================
    Tab bar
@@ -1289,4 +1295,136 @@ kbd {
 .muted.small {
   font-size: 12px;
   padding: 8px 0 0;
+}
+
+/* ============================================================
+   Terminal panel (multi-session)
+   ============================================================ */
+.terminal-panel {
+  flex-shrink: 0;
+  border-top: 1px solid var(--border);
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+.terminal-resize {
+  position: absolute;
+  top: -3px;
+  left: 0;
+  right: 0;
+  height: 6px;
+  cursor: row-resize;
+  background: transparent;
+  border: none;
+  padding: 0;
+  z-index: 5;
+}
+.terminal-resize:hover {
+  background: var(--accent);
+}
+.terminal-main {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+}
+.terminal-stage {
+  flex: 1;
+  position: relative;
+  min-width: 0;
+  overflow: hidden;
+}
+.term-view {
+  position: absolute;
+  inset: 0;
+  padding: 6px 4px 6px 10px;
+}
+.term-view.hidden {
+  visibility: hidden;
+  pointer-events: none;
+}
+.term-empty {
+  display: grid;
+  place-items: center;
+  height: 100%;
+}
+.terminal-tabs {
+  width: 184px;
+  flex-shrink: 0;
+  border-left: 1px solid var(--border);
+  background: var(--bg-elev);
+  display: flex;
+  flex-direction: column;
+}
+.terminal-tabs-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 5px 6px 5px 12px;
+  border-bottom: 1px solid var(--border);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: var(--text-faint);
+  text-transform: uppercase;
+}
+.tt-actions {
+  display: flex;
+  gap: 2px;
+}
+.terminal-tabs-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 4px;
+}
+.term-tab {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 8px;
+  border-radius: 5px;
+  font-size: 13px;
+  color: var(--text-muted);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.term-tab:hover {
+  background: var(--bg-hover);
+}
+.term-tab.on {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.tt-icon {
+  font-size: 11px;
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+.tt-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tt-kill {
+  background: none;
+  border: none;
+  color: var(--text-faint);
+  font-size: 12px;
+  cursor: pointer;
+  padding: 0 2px;
+  opacity: 0;
+}
+.term-tab:hover .tt-kill,
+.term-tab.on .tt-kill {
+  opacity: 1;
+}
+.tt-kill:hover {
+  color: var(--danger);
+}
+.setting-row code {
+  font-family: var(--mono);
+  font-size: 0.9em;
+  background: var(--bg-soft);
+  padding: 1px 5px;
+  border-radius: 4px;
 }

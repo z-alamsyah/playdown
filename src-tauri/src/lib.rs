@@ -1,6 +1,20 @@
+mod terminal;
+
 use serde::Serialize;
 use std::fs;
 use std::path::{Path, PathBuf};
+use tauri::{Emitter, Manager};
+
+/// The folder path passed on the command line at launch (`playdown <path>`).
+struct LaunchPath(Option<String>);
+
+/// Resolve the first directory argument from an argv list.
+fn dir_arg(args: &[String]) -> Option<String> {
+    args.iter()
+        .skip(1)
+        .find(|a| !a.starts_with('-') && Path::new(a).is_dir())
+        .cloned()
+}
 
 /// A node in the markdown file tree returned to the frontend.
 #[derive(Serialize)]
@@ -153,14 +167,69 @@ fn read_image_data_url(path: String) -> Result<String, String> {
     Ok(format!("data:{mime};base64,{b64}"))
 }
 
+#[tauri::command]
+fn get_launch_path(state: tauri::State<LaunchPath>) -> Option<String> {
+    state.0.clone()
+}
+
+#[cfg(unix)]
+#[tauri::command]
+fn install_cli() -> Result<String, String> {
+    use std::os::unix::fs::PermissionsExt;
+    let home = std::env::var("HOME").map_err(|e| e.to_string())?;
+    let script = "#!/bin/sh\n\
+BIN=\"/Applications/Playdown.app/Contents/MacOS/playdown\"\n\
+case \"$1\" in\n\
+  --version|-v|--help|-h) exec \"$BIN\" \"$1\" ;;\n\
+esac\n\
+target=\"${1:-.}\"\n\
+abs=$(cd \"$target\" 2>/dev/null && pwd) || abs=\"$target\"\n\
+open -a Playdown --args \"$abs\"\n";
+    let candidates = [
+        "/opt/homebrew/bin".to_string(),
+        "/usr/local/bin".to_string(),
+        format!("{home}/.local/bin"),
+    ];
+    for dir in candidates {
+        let _ = fs::create_dir_all(&dir);
+        if !Path::new(&dir).is_dir() {
+            continue;
+        }
+        let dest = format!("{dir}/playdown");
+        if fs::write(&dest, script).is_ok() {
+            let _ = fs::set_permissions(&dest, fs::Permissions::from_mode(0o755));
+            return Ok(dest);
+        }
+    }
+    Err("No writable PATH dir (tried /opt/homebrew/bin, /usr/local/bin, ~/.local/bin)".into())
+}
+
+#[cfg(not(unix))]
+#[tauri::command]
+fn install_cli() -> Result<String, String> {
+    Err("The 'playdown' command installer is macOS/Linux only.".into())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    let launch = LaunchPath(dir_arg(&std::env::args().collect::<Vec<_>>()));
+
     tauri::Builder::default()
+        .plugin(tauri_plugin_single_instance::init(|app, argv, _cwd| {
+            if let Some(dir) = dir_arg(&argv) {
+                let _ = app.emit("cli-open", dir);
+            }
+            if let Some(w) = app.get_webview_window("main") {
+                let _ = w.set_focus();
+            }
+        }))
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_store::Builder::default().build())
         .plugin(tauri_plugin_window_state::Builder::default().build())
         .plugin(tauri_plugin_clipboard_manager::init())
+        .manage(launch)
+        .manage(terminal::TerminalState::default())
         .invoke_handler(tauri::generate_handler![
             list_dir_tree,
             is_dir,
@@ -169,7 +238,14 @@ pub fn run() {
             create_file,
             create_dir,
             delete_path,
-            read_image_data_url
+            read_image_data_url,
+            get_launch_path,
+            install_cli,
+            terminal::default_shell,
+            terminal::term_open,
+            terminal::term_write,
+            terminal::term_resize,
+            terminal::term_close
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

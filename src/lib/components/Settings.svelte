@@ -8,9 +8,21 @@
     type Action,
   } from "../stores/keymap.svelte";
   import { zoomIn, zoomOut, zoomReset } from "../tauri/zoom";
+  import { invoke } from "@tauri-apps/api/core";
   import type { TitlebarColor } from "../types";
 
   const titlebarColors = Object.keys(TITLEBAR_COLORS) as TitlebarColor[];
+
+  let cliStatus = $state("");
+  async function installCli() {
+    cliStatus = "Installing…";
+    try {
+      const path = await invoke<string>("install_cli");
+      cliStatus = `Installed → ${path}`;
+    } catch (e) {
+      cliStatus = `Failed: ${e}`;
+    }
+  }
 
   let { onClose }: { onClose: () => void } = $props();
 
@@ -80,6 +92,16 @@
           <button onclick={zoomIn}>+</button>
         </div>
       </div>
+    </section>
+
+    <section>
+      <h3>Command line</h3>
+      <div class="setting-row">
+        <span>Install <code>playdown</code> command</span>
+        <button class="btn-secondary" onclick={installCli}>Install</button>
+      </div>
+      {#if cliStatus}<p class="muted small">{cliStatus}</p>{/if}
+      <p class="muted small">Then run <code>playdown .</code> in any folder from your terminal.</p>
     </section>
 
     <section>

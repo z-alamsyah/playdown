@@ -24,6 +24,8 @@ class Settings {
   zoom = $state(1);
   keymap = $state<Record<string, string>>({});
   titlebarColor = $state<TitlebarColor>("orange");
+  terminalOpen = $state(false);
+  terminalHeight = $state(240);
   loaded = $state(false);
 
   async load() {
@@ -37,7 +39,11 @@ class Settings {
       const zoom = await store.get<number>("zoom");
       const keymap = await store.get<Record<string, string>>("keymap");
       const titlebarColor = await store.get<TitlebarColor>("titlebarColor");
+      const terminalHeight = await store.get<number>("terminalHeight");
+      const terminalOpen = await store.get<boolean>("terminalOpen");
       if (titlebarColor) this.titlebarColor = titlebarColor;
+      if (typeof terminalHeight === "number") this.terminalHeight = terminalHeight;
+      if (typeof terminalOpen === "boolean") this.terminalOpen = terminalOpen;
       if (theme) this.theme = theme;
       if (lastFolder) this.lastFolder = lastFolder;
       if (session) this.session = session;
@@ -68,6 +74,20 @@ class Settings {
     this.titlebarColor = color;
     this.applyTitlebar();
     await this.persist("titlebarColor", color);
+  }
+
+  async setTerminalOpen(v: boolean) {
+    this.terminalOpen = v;
+    await this.persist("terminalOpen", v);
+  }
+
+  toggleTerminal() {
+    void this.setTerminalOpen(!this.terminalOpen);
+  }
+
+  async setTerminalHeight(px: number) {
+    this.terminalHeight = px;
+    await this.persist("terminalHeight", px);
   }
 
   async setTheme(theme: Theme) {
