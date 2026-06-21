@@ -1,6 +1,6 @@
 [package]
 name = "playdown"
-version = "0.2.0"
+version = "0.2.1"
 description = "Lightweight markdown editor & viewer"
 authors = ["z-alamsyah"]
 edition = "2021"

@@ -16,6 +16,8 @@
   import { groups } from "./lib/stores/groups.svelte";
   import { settings } from "./lib/stores/settings.svelte";
   import { keymap, IS_MAC, type Action } from "./lib/stores/keymap.svelte";
+  import { ui } from "./lib/stores/ui.svelte";
+  import { copyText } from "./lib/tauri/clipboard";
   import { isDir } from "./lib/tauri/fs";
   import { applyZoom, zoomIn, zoomOut, zoomReset, zoomBy } from "./lib/tauri/zoom";
 
@@ -140,6 +142,19 @@
 
   function handleKeydown(e: KeyboardEvent) {
     if (quickOpen || settingsOpen) return;
+
+    // Copy the selected sidebar path with ⌘C/Ctrl+C — unless the user is
+    // copying selected text or typing in a form field (then let it pass).
+    if ((e.metaKey || e.ctrlKey) && (e.key === "c" || e.key === "C") && ui.selectedPath) {
+      const ae = document.activeElement as HTMLElement | null;
+      const tag = ae?.tagName;
+      const hasTextSelection = (window.getSelection()?.toString().length ?? 0) > 0;
+      if (tag !== "INPUT" && tag !== "TEXTAREA" && !hasTextSelection) {
+        e.preventDefault();
+        void copyText(ui.selectedPath);
+        return;
+      }
+    }
 
     const primary = IS_MAC ? e.metaKey : e.ctrlKey;
     if (primary && !e.altKey && !e.shiftKey && /^[1-9]$/.test(e.key)) {

@@ -24,7 +24,6 @@
       onSave: () => void groups.saveDoc(path),
     });
     groups.registerEditor(groupId, view);
-    view.focus();
   });
 
   // React to live theme changes without rebuilding the editor.

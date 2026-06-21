@@ -28,8 +28,9 @@
         <button
           class="row dir"
           class:selected={ui.selectedPath === node.path}
-          onclick={() => {
+          onclick={(e) => {
             ui.selectedPath = node.path;
+            (e.currentTarget as HTMLElement).focus();
             toggle(node.path);
           }}
           oncontextmenu={(e) => onContext(e, node)}
@@ -45,8 +46,9 @@
           class="row file"
           class:active={groups.activeTab?.path === node.path}
           class:selected={ui.selectedPath === node.path}
-          onclick={() => {
+          onclick={(e) => {
             ui.selectedPath = node.path;
+            (e.currentTarget as HTMLElement).focus();
             groups.openFile(node.path, node.name);
           }}
           oncontextmenu={(e) => onContext(e, node)}
