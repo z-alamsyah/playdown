@@ -137,6 +137,15 @@ fn delete_path(path: String) -> Result<(), String> {
     trash::delete(&path).map_err(|e| e.to_string())
 }
 
+/// Rename (or move) a file/folder.
+#[tauri::command]
+fn rename_path(from: String, to: String) -> Result<(), String> {
+    if Path::new(&to).exists() {
+        return Err("A file or folder with that name already exists".into());
+    }
+    fs::rename(&from, &to).map_err(|e| e.to_string())
+}
+
 /// Read an image and return it as a base64 data URL (reliable on any path).
 #[tauri::command]
 fn read_image_data_url(path: String) -> Result<String, String> {
@@ -238,6 +247,7 @@ pub fn run() {
             create_file,
             create_dir,
             delete_path,
+            rename_path,
             read_image_data_url,
             get_launch_path,
             install_cli,

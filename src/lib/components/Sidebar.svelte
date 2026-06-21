@@ -4,7 +4,7 @@
   import { settings } from "../stores/settings.svelte";
   import { ui } from "../stores/ui.svelte";
   import { copyText } from "../tauri/clipboard";
-  import { promptNewEntry } from "../fileActions";
+  import { promptNewEntry, promptRename } from "../fileActions";
   import FileTree from "./FileTree.svelte";
 
   let { side }: { side: Side } = $props();
@@ -13,6 +13,10 @@
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "c" && ui.selectedPath) {
       e.preventDefault();
       void copyText(ui.selectedPath);
+    } else if (e.key === "Enter" && ui.selectedPath) {
+      // Enter on a selected node → rename (prevent the row button's activation).
+      e.preventDefault();
+      promptRename(ui.selectedPath);
     }
   }
 </script>

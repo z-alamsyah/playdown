@@ -264,6 +264,33 @@ class GroupsStore {
     }
   }
 
+  /** Remap open docs/tabs after a file/folder rename (exact path or under it). */
+  renamePath(oldPath: string, newPath: string) {
+    const base = oldPath.replace(/[/\\]+$/, "");
+    const remap = (p: string): string | null => {
+      if (p === oldPath || p === base) return newPath;
+      if (p.startsWith(base + "/")) return newPath + p.slice(base.length);
+      if (p.startsWith(base + "\\")) return newPath + p.slice(base.length);
+      return null;
+    };
+    for (const key of Object.keys(this.documents)) {
+      const np = remap(key);
+      if (np && np !== key) {
+        this.documents[np] = this.documents[key];
+        delete this.documents[key];
+      }
+    }
+    for (const g of this.groups) {
+      for (const t of g.tabs) {
+        const np = remap(t.path);
+        if (np) {
+          t.path = np;
+          t.name = np.split(/[/\\]/).filter(Boolean).pop() ?? t.name;
+        }
+      }
+    }
+  }
+
   /** Close any open tabs at `target` or (for folders) under it. */
   closeUnder(target: string) {
     const base = target.replace(/[/\\]+$/, "");

@@ -24,6 +24,10 @@ export const createDir = (path: string) => invoke<void>("create_dir", { path });
 /** Move a file/folder to the OS trash (recoverable). */
 export const deletePath = (path: string) => invoke<void>("delete_path", { path });
 
+/** Rename (or move) a file/folder. */
+export const renamePath = (from: string, to: string) =>
+  invoke<void>("rename_path", { from, to });
+
 /** Read an image as a base64 data URL. */
 export const readImageDataUrl = (path: string) =>
   invoke<string>("read_image_data_url", { path });
