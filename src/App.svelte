@@ -25,6 +25,13 @@
   let unlisten: (() => void) | undefined;
   let unlistenCli: (() => void) | undefined;
 
+  // Mount the terminal lazily on first open, then keep it mounted (just
+  // hidden) so toggling the panel never kills running shell sessions.
+  let terminalMounted = $state(false);
+  $effect(() => {
+    if (settings.terminalOpen) terminalMounted = true;
+  });
+
   const outlineSide = $derived(settings.sidebarSide === "left" ? "right" : "left");
   const showWelcome = $derived(
     !workspace.root && !groups.groups.some((g) => g.tabs.length),
@@ -184,8 +191,8 @@
       <Layout node={groups.layout} />
     {/if}
     </div>
-    {#if settings.terminalOpen}
-      <TerminalPanel />
+    {#if terminalMounted}
+      <TerminalPanel hidden={!settings.terminalOpen} />
     {/if}
     <StatusBar onOpenSettings={() => (settingsOpen = true)} />
   </main>

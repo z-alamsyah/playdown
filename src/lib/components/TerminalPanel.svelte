@@ -5,6 +5,8 @@
   import { settings } from "../stores/settings.svelte";
   import TerminalView from "./TerminalView.svelte";
 
+  let { hidden = false }: { hidden?: boolean } = $props();
+
   onMount(async () => {
     try {
       terminal.shellName = await invoke<string>("default_shell");
@@ -33,7 +35,7 @@
   }
 </script>
 
-<div class="terminal-panel" style="height: {settings.terminalHeight}px">
+<div class="terminal-panel" class:hidden style="height: {settings.terminalHeight}px">
   <button class="terminal-resize" aria-label="Resize terminal" onpointerdown={startResize}></button>
 
   <div class="terminal-main">

@@ -1308,6 +1308,9 @@ kbd {
   flex-direction: column;
   position: relative;
 }
+.terminal-panel.hidden {
+  display: none;
+}
 .terminal-resize {
   position: absolute;
   top: -3px;
