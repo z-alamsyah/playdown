@@ -16,7 +16,17 @@
   let unlistenExit: UnlistenFn | undefined;
   let ro: ResizeObserver | undefined;
   let onWinResize: (() => void) | undefined;
+  let fitTimer: ReturnType<typeof setTimeout> | undefined;
   let ready = false;
+
+  // Debounce fits so dragging the panel doesn't flood the PTY with SIGWINCH
+  // (which makes TUIs like Claude Code redraw repeatedly and leave artifacts).
+  function scheduleFit() {
+    clearTimeout(fitTimer);
+    fitTimer = setTimeout(() => {
+      if (active) doFit();
+    }, 120);
+  }
 
   function waitForSize(node: HTMLElement, timeoutMs = 2000): Promise<void> {
     return new Promise((resolve) => {
@@ -58,6 +68,7 @@
     try {
       fit.fit();
       void invoke("term_resize", { id, cols: term.cols, rows: term.rows });
+      term.scrollToBottom();
     } catch {
       /* ignore fit before layout settles */
     }
@@ -131,9 +142,9 @@
       term.write("\r\n\x1b[90m[process exited]\x1b[0m\r\n"),
     );
 
-    ro = new ResizeObserver(() => active && doFit());
+    ro = new ResizeObserver(() => scheduleFit());
     ro.observe(el);
-    onWinResize = () => active && doFit();
+    onWinResize = () => scheduleFit();
     window.addEventListener("resize", onWinResize);
     ready = true;
     if (active) {
@@ -174,6 +185,7 @@
     unlistenOut?.();
     unlistenExit?.();
     ro?.disconnect();
+    clearTimeout(fitTimer);
     if (onWinResize) window.removeEventListener("resize", onWinResize);
     void invoke("term_close", { id }).catch(() => {});
     term?.dispose();
