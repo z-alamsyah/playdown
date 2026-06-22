@@ -13,6 +13,7 @@
   import TerminalPanel from "./lib/components/TerminalPanel.svelte";
   import { workspace } from "./lib/stores/workspace.svelte";
   import { groups } from "./lib/stores/groups.svelte";
+  import { terminal } from "./lib/stores/terminal.svelte";
   import { settings } from "./lib/stores/settings.svelte";
   import { keymap, IS_MAC, type Action } from "./lib/stores/keymap.svelte";
   import { ui } from "./lib/stores/ui.svelte";
@@ -99,6 +100,8 @@
       case "zoomReset": zoomReset(); break;
       case "formatDoc": groups.formatActive(); break;
       case "toggleTerminal": settings.toggleTerminal(); break;
+      case "nextTerminal": if (settings.terminalOpen) terminal.cycle(1); break;
+      case "prevTerminal": if (settings.terminalOpen) terminal.cycle(-1); break;
       case "openSettings": settingsOpen = true; break;
       case "closeTab": {
         const g = groups.activeGroup;

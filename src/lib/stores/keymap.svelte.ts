@@ -20,6 +20,8 @@ export type Action =
   | "zoomReset"
   | "formatDoc"
   | "toggleTerminal"
+  | "nextTerminal"
+  | "prevTerminal"
   | "openSettings";
 
 export interface ActionDef {
@@ -47,6 +49,8 @@ export const ACTIONS: ActionDef[] = [
   { id: "zoomReset", label: "Reset zoom" },
   { id: "formatDoc", label: "Format JSON" },
   { id: "toggleTerminal", label: "Toggle terminal" },
+  { id: "nextTerminal", label: "Next terminal session" },
+  { id: "prevTerminal", label: "Previous terminal session" },
   { id: "openSettings", label: "Open settings" },
 ];
 
@@ -70,6 +74,8 @@ const DEFAULTS: Record<Action, string> = {
   zoomReset: "Mod+0",
   formatDoc: "Mod+Shift+F",
   toggleTerminal: "Ctrl+`",
+  nextTerminal: "Mod+Alt+ArrowDown",
+  prevTerminal: "Mod+Alt+ArrowUp",
   openSettings: "Mod+,",
 };
 

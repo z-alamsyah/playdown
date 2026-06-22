@@ -64,7 +64,7 @@ pnpm tauri build      # bundle for your OS
 - 🖼️ **Image preview** — png/jpg/gif/webp/svg/bmp/ico/avif rendered inline
 - 🗃️ **File ops** — new file / new folder (created inside the selected folder), rename (right-click or `Enter`), delete to Trash, copy full / relative path (`⌘C`), and **drag-and-drop to move** files/folders in the sidebar
 - 🖥️ **Built-in terminal** — multi-session (new / switch / kill), **dockable bottom or right (side-by-side with the editor)**, resizable, `` Ctrl+` `` to toggle (xterm.js + JuliaMono lazy-loaded — zero idle cost)
-- ⌨️ **`playdown` CLI** — `playdown .` opens a folder from your terminal; `playdown --version` / `--help` (install from Settings → Command line)
+- ⌨️ **`playdown` CLI** — `playdown .` opens a folder from your terminal; `playdown --update` pulls the latest release; `playdown --version` / `--help` (install from Settings → Command line)
 - 🔍 **Zoom** — `⌘=` / `⌘-` / `⌘0` or trackpad pinch
 - ⚙️ **Settings** (`⌘,`) — theme, sidebar side (left/right), zoom, and **fully rebindable shortcuts**
 - 🌗 **Dark / light themes**, window state, and full session (layout + open tabs) persisted across restarts
@@ -86,6 +86,7 @@ All shortcuts are rebindable in Settings (`⌘,`). Defaults:
 | `⌘⇧O` | Toggle outline |
 | `⌘⇧F` | Format JSON |
 | `` Ctrl+` `` | Toggle terminal |
+| `⌘⌥↓` / `⌘⌥↑` | Next / previous terminal session |
 | `⌘W` | Close tab |
 | `⌘⌥W` | Close other tabs |
 | `⌘⇧W` | Close all tabs |

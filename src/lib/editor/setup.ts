@@ -15,7 +15,6 @@ import {
   indentWithTab,
 } from "@codemirror/commands";
 import { markdown, markdownLanguage } from "@codemirror/lang-markdown";
-import { languages } from "@codemirror/language-data";
 import { json } from "@codemirror/lang-json";
 import { search, searchKeymap } from "@codemirror/search";
 import type { Extension } from "@codemirror/state";
@@ -32,6 +31,11 @@ import { frontmatterExtension } from "./frontmatter";
 
 /** Swappable theme so dark/light can change without rebuilding the editor. */
 export const themeCompartment = new Compartment();
+
+/** Holds the markdown extension so code-fence grammars (language-data) can be
+ *  swapped in lazily after the editor mounts, keeping that ~200KB off the
+ *  cold-start bundle. */
+const mdCompartment = new Compartment();
 
 const baseTheme = EditorView.theme({
   "&": { height: "100%", fontSize: "14px", backgroundColor: "transparent" },
@@ -56,7 +60,7 @@ function languageExtensions(language: EditorLanguage): Extension {
   if (language === "json") return json();
   if (language === "text") return [];
   return [
-    markdown({ base: markdownLanguage, codeLanguages: languages }),
+    mdCompartment.of(markdown({ base: markdownLanguage })),
     frontmatterExtension,
   ];
 }
@@ -107,5 +111,23 @@ export function createEditor(opts: EditorOptions): EditorView {
     ],
   });
 
-  return new EditorView({ state, parent: opts.parent });
+  const view = new EditorView({ state, parent: opts.parent });
+
+  // Lazy-load code-fence language grammars (language-data ~200KB) and wire
+  // them into the live editor once ready — off the cold-start path.
+  if (opts.language === "markdown") {
+    void import("@codemirror/language-data").then(({ languages }) => {
+      try {
+        view.dispatch({
+          effects: mdCompartment.reconfigure(
+            markdown({ base: markdownLanguage, codeLanguages: languages }),
+          ),
+        });
+      } catch {
+        /* view destroyed before grammars finished loading */
+      }
+    });
+  }
+
+  return view;
 }

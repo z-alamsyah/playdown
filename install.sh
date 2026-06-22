@@ -40,7 +40,7 @@ if [ "$OS" = "Darwin" ]; then
 #!/bin/sh
 BIN="/Applications/Playdown.app/Contents/MacOS/playdown"
 case "$1" in
-  --version|-v|--help|-h) exec "$BIN" "$1" ;;
+  --version|-v|--help|-h|--update) exec "$BIN" "$1" ;;
 esac
 target="${1:-.}"
 abs=$(cd "$target" 2>/dev/null && pwd) || abs="$target"

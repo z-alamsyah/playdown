@@ -275,6 +275,7 @@ class GroupsStore {
     } else if (g.activeIndex >= g.tabs.length) {
       g.activeIndex = g.tabs.length - 1;
     }
+    this.evictUnusedDocs();
   }
 
   /** Remap open docs/tabs after a file/folder rename (exact path or under it). */
@@ -332,6 +333,7 @@ class GroupsStore {
     } else {
       g.activeIndex = 0;
     }
+    this.evictUnusedDocs();
   }
 
   /** Close all tabs except the one at `keepIndex` (and any unsaved ones). */
@@ -343,6 +345,7 @@ class GroupsStore {
     g.tabs = kept;
     const idx = kept.findIndex((t) => t.path === keepPath);
     g.activeIndex = idx >= 0 ? idx : kept.length - 1;
+    this.evictUnusedDocs();
   }
 
   closeGroup(id: string) {
@@ -351,6 +354,18 @@ class GroupsStore {
     this.layout = this.removeLeaf(this.layout, id);
     if (this.activeGroupId === id) {
       this.activeGroupId = this.groups[0]?.id ?? "";
+    }
+    this.evictUnusedDocs();
+  }
+
+  /** Drop cached buffers for files no longer open in any group (keeping
+   *  unsaved ones), so closing tabs releases heap instead of leaking it
+   *  for the whole session. */
+  private evictUnusedDocs() {
+    const open = new Set<string>();
+    for (const g of this.groups) for (const t of g.tabs) open.add(t.path);
+    for (const key of Object.keys(this.documents)) {
+      if (!open.has(key) && !this.isDirtyPath(key)) delete this.documents[key];
     }
   }
 

@@ -30,6 +30,15 @@ class TerminalStore {
     this.activeId = id;
   }
 
+  /** Cycle the active session forward (1) or backward (-1). */
+  cycle(dir: 1 | -1) {
+    if (this.sessions.length < 2) return;
+    const i = this.sessions.findIndex((s) => s.id === this.activeId);
+    const cur = i < 0 ? 0 : i;
+    const next = (cur + dir + this.sessions.length) % this.sessions.length;
+    this.activeId = this.sessions[next].id;
+  }
+
   /** Remove a session; <TerminalView> unmount kills its PTY. */
   close(id: string) {
     const i = this.sessions.findIndex((s) => s.id === id);

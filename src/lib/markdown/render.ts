@@ -1,9 +1,24 @@
 import MarkdownIt from "markdown-it";
 import taskLists from "markdown-it-task-lists";
 import frontMatter from "markdown-it-front-matter";
-import hljs from "highlight.js/lib/common";
+import type { HLJSApi } from "highlight.js";
 import yaml from "js-yaml";
 import { slugify } from "./slug";
+
+// highlight.js (~100KB) loads lazily so it stays off the cold-start bundle.
+// Until it resolves, code blocks render as escaped plain text; callers await
+// ensureHighlighter() and re-render once it's ready.
+let hljs: HLJSApi | null = null;
+let hljsPromise: Promise<void> | null = null;
+export function ensureHighlighter(): Promise<void> {
+  if (hljs) return Promise.resolve();
+  if (!hljsPromise) {
+    hljsPromise = import("highlight.js/lib/common").then((m) => {
+      hljs = m.default;
+    });
+  }
+  return hljsPromise;
+}
 
 let capturedFrontmatter = "";
 let slugCounts: Record<string, number> = {};
@@ -20,7 +35,7 @@ const md: MarkdownIt = new MarkdownIt({
   linkify: true,
   typographer: true,
   highlight: (str, lang): string => {
-    if (lang && hljs.getLanguage(lang)) {
+    if (lang && hljs && hljs.getLanguage(lang)) {
       try {
         const out = hljs.highlight(str, { language: lang, ignoreIllegals: true }).value;
         return `<pre class="hljs"><code>${out}</code></pre>`;
@@ -92,7 +107,9 @@ export function renderJson(content: string): RenderResult {
   }
   try {
     const pretty = JSON.stringify(JSON.parse(content), null, 2);
-    const code = hljs.highlight(pretty, { language: "json" }).value;
+    const code = hljs
+      ? hljs.highlight(pretty, { language: "json" }).value
+      : md.utils.escapeHtml(pretty);
     return {
       html: `<pre class="hljs json-preview"><code>${code}</code></pre>`,
       frontmatter: null,

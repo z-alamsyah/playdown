@@ -189,7 +189,7 @@ fn install_cli() -> Result<String, String> {
     let script = "#!/bin/sh\n\
 BIN=\"/Applications/Playdown.app/Contents/MacOS/playdown\"\n\
 case \"$1\" in\n\
-  --version|-v|--help|-h) exec \"$BIN\" \"$1\" ;;\n\
+  --version|-v|--help|-h|--update) exec \"$BIN\" \"$1\" ;;\n\
 esac\n\
 target=\"${1:-.}\"\n\
 abs=$(cd \"$target\" 2>/dev/null && pwd) || abs=\"$target\"\n\

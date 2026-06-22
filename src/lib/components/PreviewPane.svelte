@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount, onDestroy } from "svelte";
-  import { render, renderJson } from "../markdown/render";
+  import { render, renderJson, ensureHighlighter } from "../markdown/render";
   import { groups } from "../stores/groups.svelte";
   import { settings } from "../stores/settings.svelte";
   import { openUrl } from "@tauri-apps/plugin-opener";
@@ -10,11 +10,16 @@
 
   let body: HTMLDivElement;
 
-  const result = $derived(
-    kind === "json"
+  // Bumped once the lazy highlighter loads so the preview re-renders with
+  // syntax highlighting (mirrors the lazy mermaid pattern in the effect below).
+  let hlReady = $state(0);
+
+  const result = $derived.by(() => {
+    void hlReady;
+    return kind === "json"
       ? renderJson(groups.docContent(path))
-      : render(groups.docContent(path)),
-  );
+      : render(groups.docContent(path));
+  });
 
   function formatVal(v: unknown): string {
     if (v === null || v === undefined) return "";
@@ -23,7 +28,10 @@
     return String(v);
   }
 
-  onMount(() => groups.registerPreview(groupId, body));
+  onMount(() => {
+    groups.registerPreview(groupId, body);
+    void ensureHighlighter().then(() => hlReady++);
+  });
   onDestroy(() => groups.unregisterPreview(groupId));
 
   // Inject rendered HTML, wire external links to the OS browser, render mermaid.
