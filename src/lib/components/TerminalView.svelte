@@ -11,7 +11,7 @@
   // xterm is lazy-loaded, so keep these loosely typed.
   let term: any;
   let fit: any;
-  let canvas: any;
+  let renderer: any;
   let unlistenOut: UnlistenFn | undefined;
   let unlistenExit: UnlistenFn | undefined;
   let ro: ResizeObserver | undefined;
@@ -36,10 +36,9 @@
   }
 
   onMount(async () => {
-    const [{ Terminal }, { FitAddon }, { CanvasAddon }] = await Promise.all([
+    const [{ Terminal }, { FitAddon }] = await Promise.all([
       import("@xterm/xterm"),
       import("@xterm/addon-fit"),
-      import("@xterm/addon-canvas"),
     ]);
     await import("@xterm/xterm/css/xterm.css");
     // Cell metrics depend on the monospace font being ready.
@@ -60,13 +59,27 @@
     fit = new FitAddon();
     term.loadAddon(fit);
     term.open(el);
-    // Canvas renderer draws each glyph in its own cell — avoids the
-    // overlapping/garbled text the DOM renderer produces for TUIs.
+    // WebGL renderer GPU-scales the whole texture — unlike the canvas/DOM
+    // renderers it doesn't round each cell to integer pixels, so it stays
+    // aligned at fractional zoom (webview zoom → fractional devicePixelRatio).
+    // Fall back to canvas, then the built-in DOM renderer.
     try {
-      canvas = new CanvasAddon();
-      term.loadAddon(canvas);
-    } catch (e) {
-      console.error("canvas addon failed:", e);
+      const { WebglAddon } = await import("@xterm/addon-webgl");
+      const webgl = new WebglAddon();
+      webgl.onContextLoss(() => {
+        webgl.dispose();
+        if (renderer === webgl) renderer = undefined;
+      });
+      term.loadAddon(webgl);
+      renderer = webgl;
+    } catch {
+      try {
+        const { CanvasAddon } = await import("@xterm/addon-canvas");
+        renderer = new CanvasAddon();
+        term.loadAddon(renderer);
+      } catch (e) {
+        console.error("terminal renderer addon failed:", e);
+      }
     }
 
     // Fit only once layout + fonts have settled.
@@ -111,7 +124,7 @@
     settings.zoom;
     if (ready && active) {
       requestAnimationFrame(() => {
-        canvas?.clearTextureAtlas?.();
+        renderer?.clearTextureAtlas?.();
         doFit();
       });
     }
