@@ -40,6 +40,38 @@
   }
 </script>
 
+{#snippet tab(s: { id: string; label: string }, i: number)}
+  <button
+    class="term-tab"
+    class:on={s.id === terminal.activeId}
+    title="{i + 1}: {s.label}"
+    onclick={() => terminal.setActive(s.id)}
+  >
+    <span class="tt-name">{i + 1}: {s.label}</span>
+    <span
+      class="tt-kill"
+      role="button"
+      tabindex="0"
+      title="Kill"
+      onclick={(e) => {
+        e.stopPropagation();
+        terminal.close(s.id);
+      }}
+      onkeydown={(e) => e.key === "Enter" && terminal.close(s.id)}
+    >×</span>
+  </button>
+{/snippet}
+
+{#snippet actions()}
+  <button class="icon-btn" title="New terminal" onclick={() => terminal.create()}>＋</button>
+  <button
+    class="icon-btn"
+    title={settings.terminalSide === "bottom" ? "Dock right" : "Dock bottom"}
+    onclick={() => settings.toggleTerminalSide()}
+  >{settings.terminalSide === "bottom" ? "⇥" : "⤓"}</button>
+  <button class="icon-btn" title="Close (Ctrl+`)" onclick={() => settings.setTerminalOpen(false)}>×</button>
+{/snippet}
+
 <div
   class="terminal-panel {settings.terminalSide}"
   class:hidden
@@ -53,48 +85,37 @@
     onpointerdown={startResize}
   ></button>
 
-  <div class="terminal-header">
-    <span class="th-title">TERMINAL</span>
-    <div class="terminal-tabs-strip">
-      {#each terminal.sessions as s, i (s.id)}
-        <button
-          class="term-tab"
-          class:on={s.id === terminal.activeId}
-          title="{i + 1}: {s.label}"
-          onclick={() => terminal.setActive(s.id)}
-        >
-          <span class="tt-name">{i + 1}: {s.label}</span>
-          <span
-            class="tt-kill"
-            role="button"
-            tabindex="0"
-            title="Kill"
-            onclick={(e) => {
-              e.stopPropagation();
-              terminal.close(s.id);
-            }}
-            onkeydown={(e) => e.key === "Enter" && terminal.close(s.id)}
-          >×</span>
-        </button>
-      {/each}
-    </div>
-    <div class="th-actions">
-      <button class="icon-btn" title="New terminal" onclick={() => terminal.create()}>＋</button>
-      <button
-        class="icon-btn"
-        title={settings.terminalSide === "bottom" ? "Dock right" : "Dock bottom"}
-        onclick={() => settings.toggleTerminalSide()}
-      >{settings.terminalSide === "bottom" ? "⇥" : "⤓"}</button>
-      <button class="icon-btn" title="Close (Ctrl+`)" onclick={() => settings.setTerminalOpen(false)}>×</button>
-    </div>
-  </div>
+  <div class="terminal-body {settings.terminalSide}">
+    {#if settings.terminalSide === "right"}
+      <div class="terminal-header">
+        <span class="th-title">TERMINAL</span>
+        <div class="terminal-tabs-strip">
+          {#each terminal.sessions as s, i (s.id)}{@render tab(s, i)}{/each}
+        </div>
+        <div class="th-actions">{@render actions()}</div>
+      </div>
+    {/if}
 
-  <div class="terminal-stage">
-    {#each terminal.sessions as s (s.id)}
-      <TerminalView id={s.id} active={s.id === terminal.activeId} />
-    {/each}
-    {#if terminal.sessions.length === 0}
-      <div class="muted term-empty">No terminal sessions</div>
+    <!-- Persistent stage — kept mounted across dock toggles so PTYs survive. -->
+    <div class="terminal-stage">
+      {#each terminal.sessions as s (s.id)}
+        <TerminalView id={s.id} active={s.id === terminal.activeId} />
+      {/each}
+      {#if terminal.sessions.length === 0}
+        <div class="muted term-empty">No terminal sessions</div>
+      {/if}
+    </div>
+
+    {#if settings.terminalSide === "bottom"}
+      <div class="terminal-tabs">
+        <div class="terminal-tabs-head">
+          <span class="th-title">TERMINAL</span>
+          <div class="th-actions">{@render actions()}</div>
+        </div>
+        <div class="terminal-tabs-list">
+          {#each terminal.sessions as s, i (s.id)}{@render tab(s, i)}{/each}
+        </div>
+      </div>
     {/if}
   </div>
 </div>

@@ -1329,6 +1329,19 @@ kbd {
   display: none;
 }
 
+.terminal-body {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+}
+.terminal-body.bottom {
+  flex-direction: row; /* stage | vertical session list on the right */
+}
+.terminal-body.right {
+  flex-direction: column; /* top tab strip; stage below */
+}
+
 .terminal-resize {
   position: absolute;
   background: transparent;
@@ -1418,6 +1431,42 @@ kbd {
 .tt-kill:hover {
   opacity: 1;
   color: var(--danger);
+}
+
+/* bottom dock: vertical session list docked on the right of the panel */
+.terminal-tabs {
+  width: 180px;
+  flex-shrink: 0;
+  border-left: 1px solid var(--border);
+  background: var(--bg-elev);
+  display: flex;
+  flex-direction: column;
+}
+.terminal-tabs-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  height: 30px;
+  padding: 0 6px 0 12px;
+  border-bottom: 1px solid var(--border);
+}
+.terminal-tabs-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.terminal-tabs-list .term-tab {
+  width: 100%;
+  justify-content: space-between;
+  background: none;
+  border-color: transparent;
+}
+.terminal-tabs-list .term-tab .tt-name {
+  flex: 1;
 }
 
 .terminal-stage {

@@ -1,6 +1,5 @@
 <script lang="ts">
   import { onMount, onDestroy } from "svelte";
-  import { getCurrentWebview } from "@tauri-apps/api/webview";
   import { invoke } from "@tauri-apps/api/core";
   import { listen } from "@tauri-apps/api/event";
   import Sidebar from "./lib/components/Sidebar.svelte";
@@ -18,13 +17,10 @@
   import { keymap, IS_MAC, type Action } from "./lib/stores/keymap.svelte";
   import { ui } from "./lib/stores/ui.svelte";
   import { copyText } from "./lib/tauri/clipboard";
-  import { isDir } from "./lib/tauri/fs";
   import { applyZoom, zoomIn, zoomOut, zoomReset, zoomBy } from "./lib/tauri/zoom";
 
   let quickOpen = $state(false);
   let settingsOpen = $state(false);
-  let fileHover = $state(false);
-  let unlisten: (() => void) | undefined;
   let unlistenCli: (() => void) | undefined;
 
   // Mount the terminal lazily on first open, then keep it mounted (just
@@ -60,37 +56,9 @@
     });
 
     window.addEventListener("wheel", onWheel, { passive: false });
-
-    unlisten = await getCurrentWebview().onDragDropEvent(async (event) => {
-      const payload = event.payload;
-      if (payload.type === "enter" || payload.type === "over") {
-        fileHover = true;
-      } else if (payload.type === "leave") {
-        fileHover = false;
-      } else if (payload.type === "drop") {
-        fileHover = false;
-        const paths = payload.paths ?? [];
-        let openedFolder = false;
-        for (const path of paths) {
-          if (await isDir(path)) {
-            await workspace.setRoot(path);
-            openedFolder = true;
-            break;
-          }
-        }
-        if (!openedFolder) {
-          for (const path of paths) {
-            if (/\.(md|markdown|mdx|mdown)$/i.test(path)) {
-              await groups.openFile(path);
-            }
-          }
-        }
-      }
-    });
   });
 
   onDestroy(() => {
-    unlisten?.();
     unlistenCli?.();
     window.removeEventListener("wheel", onWheel);
   });
@@ -209,7 +177,6 @@
           <span><kbd>⌘\</kbd> split</span>
           <span><kbd>⌘,</kbd> settings</span>
         </div>
-        <p class="empty-drop">…or drag a folder onto the window</p>
       </div>
     {:else if groups.layout}
       <Layout node={groups.layout} />
@@ -240,12 +207,6 @@
       {#if settings.outlineVisible}<Outline side="left" />{/if}
       {@render mainArea()}
       {#if settings.sidebarVisible}<Sidebar side="right" />{/if}
-    {/if}
-
-    {#if fileHover}
-      <div class="file-drop-overlay">
-        <div class="file-drop-card">📂 Drop folder or markdown to open</div>
-      </div>
     {/if}
   </div>
 </div>

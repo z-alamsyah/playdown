@@ -50,8 +50,15 @@ class Workspace {
     }
   }
 
+  /** Re-read the tree in place (no loading flip) so the sidebar keeps its
+   *  expanded folders + selection after a create/rename/delete/move. */
   async refresh() {
-    if (this.root) await this.setRoot(this.root);
+    if (!this.root) return;
+    try {
+      this.tree = await listDirTree(this.root);
+    } catch (e) {
+      console.error("Failed to refresh tree:", e);
+    }
   }
 
   /** Path relative to the workspace root (for "copy relative path"). */
