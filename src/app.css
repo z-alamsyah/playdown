@@ -1434,3 +1434,25 @@ kbd {
   padding: 1px 5px;
   border-radius: 4px;
 }
+
+/* Drag-and-drop move targets in the sidebar */
+.row.dir.drop-target {
+  background: var(--accent-soft);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+.tree.root-drop {
+  box-shadow: inset 0 0 0 2px var(--accent);
+  border-radius: 4px;
+}
+/* Disambiguating parent-folder hint on duplicate-name tabs */
+.tab-hint {
+  font-size: 11px;
+  color: var(--text-faint);
+  flex-shrink: 0;
+}
+.statusbar .file {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 46vw;
+}

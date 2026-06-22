@@ -1,10 +1,12 @@
 <script lang="ts">
   import { groups } from "../stores/groups.svelte";
   import { settings } from "../stores/settings.svelte";
+  import { workspace } from "../stores/workspace.svelte";
 
   let { onOpenSettings }: { onOpenSettings: () => void } = $props();
 
   const tab = $derived(groups.activeTab);
+  const relPath = $derived(tab ? workspace.relativeOf(tab.path) : "");
 
   const stats = $derived.by(() => {
     const c = tab ? groups.docContent(tab.path) : "";
@@ -22,7 +24,7 @@
     <button class="status-btn" title="Toggle sidebar (⌘B)" onclick={() => settings.toggleSidebar()}>▤</button>
     <button class="status-btn" title="Toggle outline (⌘⇧O)" onclick={() => settings.toggleOutline()}>☰</button>
     {#if tab}
-      <span class="file">{tab.name}</span>
+      <span class="file" title={tab.path}>{relPath}</span>
       {#if groups.isDirtyPath(tab.path)}<span class="dot" title="Unsaved">●</span>{/if}
     {/if}
   </div>

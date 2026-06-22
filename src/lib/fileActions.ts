@@ -14,6 +14,32 @@ function baseName(p: string): string {
   return p.split(/[/\\]/).filter(Boolean).pop() ?? p;
 }
 
+/** The folder new files/folders should go into: the selected folder, the
+ *  selected file's parent, or the workspace root. */
+export function selectedDir(): string | null {
+  if (ui.selectedPath) {
+    return ui.selectedIsDir ? ui.selectedPath : parentDir(ui.selectedPath);
+  }
+  return workspace.root;
+}
+
+/** Move a file/folder into destDir (drag-and-drop). */
+export async function moveEntry(src: string, destDir: string) {
+  const srcBase = src.replace(/[/\\]+$/, "");
+  const dest = destDir.replace(/[/\\]+$/, "") + "/" + baseName(src);
+  if (dest === src) return; // already there
+  // Can't move a folder into itself or a descendant.
+  if (destDir === srcBase || destDir.startsWith(srcBase + "/")) return;
+  try {
+    await renamePath(src, dest);
+    groups.renamePath(src, dest);
+    if (ui.selectedPath === src) ui.selectedPath = dest;
+    await workspace.refresh();
+  } catch (e) {
+    console.error("Move failed:", e);
+  }
+}
+
 /** Prompt to rename a file/folder by path; updates open tabs + tree. */
 export function promptRename(path: string) {
   const current = baseName(path);

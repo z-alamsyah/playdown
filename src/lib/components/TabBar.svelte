@@ -4,6 +4,14 @@
 
   let { group }: { group: EditorGroup } = $props();
 
+  // Disambiguating parent folder when two open tabs share a name.
+  function hint(index: number): string {
+    const tab = group.tabs[index];
+    const dup = group.tabs.some((t, j) => j !== index && t.name === tab.name);
+    if (!dup) return "";
+    return tab.path.split(/[/\\]/).filter(Boolean).slice(-2, -1)[0] ?? "";
+  }
+
   function onDragStart(e: DragEvent, index: number) {
     e.dataTransfer?.setData(
       "application/x-playdown-tab",
@@ -28,6 +36,7 @@
       onkeydown={(e) => e.key === "Enter" && groups.setActiveTab(group.id, i)}
     >
       <span class="tab-name">{tab.name}</span>
+      {#if hint(i)}<span class="tab-hint">{hint(i)}</span>{/if}
       {#if groups.isDirtyPath(tab.path)}
         <span class="dirty" title="Unsaved changes">●</span>
       {/if}

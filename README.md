@@ -45,7 +45,7 @@ pnpm tauri build      # bundle for your OS
 ## Features
 
 - 📂 **Folder tree** — open a folder (or drag one onto the window); shows all files including dotfiles, with nested indent guides
-- 🗂️ **Tabs** — open multiple files; drag tabs to reorder or move between groups
+- 🗂️ **Tabs** — open multiple files; drag tabs to reorder or move between groups; same-name files show their folder, and the status bar shows the active file's path
 - 🪟 **Split panes** — VSCode-style: drag a tab to a pane edge to split (row/column, nested), resizable dividers; `⌘\` splits right
 - ✏️ **Edit ⇄ Preview** — per-pane toggle (top-right of each group); edit on the left, live preview on the right
 - 🔎 **Quick Open** — `⌘P` fuzzy file finder
@@ -56,7 +56,7 @@ pnpm tauri build      # bundle for your OS
 - 🧜 **Mermaid** — diagrams rendered in preview (lazy-loaded)
 - 🔡 **JSON** — syntax highlighting, `⌘⇧F` to format/pretty-print, highlighted JSON preview
 - 🖼️ **Image preview** — png/jpg/gif/webp/svg/bmp/ico/avif rendered inline
-- 🗃️ **File ops** — new file / new folder (sidebar buttons or right-click), rename (right-click or `Enter` on a selection), delete to Trash, copy full / relative path (right-click or select + `⌘C`)
+- 🗃️ **File ops** — new file / new folder (created inside the selected folder), rename (right-click or `Enter`), delete to Trash, copy full / relative path (`⌘C`), and **drag-and-drop to move** files/folders in the sidebar
 - 🖥️ **Built-in terminal** — multi-session, VSCode-style management (new / switch / kill), resizable bottom panel, `` Ctrl+` `` to toggle (xterm.js lazy-loaded — zero idle cost)
 - ⌨️ **`playdown` CLI** — `playdown .` opens a folder from your terminal; `playdown --version` / `--help` (install from Settings → Command line)
 - 🔍 **Zoom** — `⌘=` / `⌘-` / `⌘0` or trackpad pinch

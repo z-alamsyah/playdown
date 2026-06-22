@@ -23,8 +23,14 @@ export interface PromptState {
 class UI {
   menu = $state<ContextMenuState | null>(null);
   prompt = $state<PromptState | null>(null);
-  /** Currently selected node in the sidebar tree (for ⌘C copy path). */
+  /** Currently selected node in the sidebar tree (for ⌘C copy path, etc.). */
   selectedPath = $state<string | null>(null);
+  selectedIsDir = $state(false);
+
+  select(path: string, isDir: boolean) {
+    this.selectedPath = path;
+    this.selectedIsDir = isDir;
+  }
 
   showMenu(x: number, y: number, items: MenuItem[]) {
     this.menu = { x, y, items };
