@@ -35,7 +35,13 @@
   }
 </script>
 
-<div class="terminal-panel" class:hidden style="height: {settings.terminalHeight}px">
+<!-- Counter the app/webview zoom so the terminal always renders at an
+     integer scale — keeps box-drawing/separators crisp at any zoom. -->
+<div
+  class="terminal-panel"
+  class:hidden
+  style="height: {settings.terminalHeight}px; zoom: {1 / settings.zoom};"
+>
   <button class="terminal-resize" aria-label="Resize terminal" onpointerdown={startResize}></button>
 
   <div class="terminal-main">

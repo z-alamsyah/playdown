@@ -15,7 +15,25 @@
   let unlistenOut: UnlistenFn | undefined;
   let unlistenExit: UnlistenFn | undefined;
   let ro: ResizeObserver | undefined;
+  let onWinResize: (() => void) | undefined;
   let ready = false;
+
+  function waitForSize(node: HTMLElement, timeoutMs = 2000): Promise<void> {
+    return new Promise((resolve) => {
+      if (node.clientWidth > 0 && node.clientHeight > 0) return resolve();
+      const obs = new ResizeObserver(() => {
+        if (node.clientWidth > 0 && node.clientHeight > 0) {
+          obs.disconnect();
+          resolve();
+        }
+      });
+      obs.observe(node);
+      setTimeout(() => {
+        obs.disconnect();
+        resolve();
+      }, timeoutMs);
+    });
+  }
 
   const MONO = 'ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace';
 
@@ -82,7 +100,9 @@
       }
     }
 
-    // Fit only once layout + fonts have settled.
+    // Open the PTY only once the container has a real size, so the shell
+    // starts at the correct width (no narrow initial layout).
+    await waitForSize(el);
     await new Promise((r) => requestAnimationFrame(() => r(null)));
     doFit();
 
@@ -101,6 +121,8 @@
 
     ro = new ResizeObserver(() => active && doFit());
     ro.observe(el);
+    onWinResize = () => active && doFit();
+    window.addEventListener("resize", onWinResize);
     ready = true;
     if (active) {
       doFit();
@@ -139,6 +161,7 @@
     unlistenOut?.();
     unlistenExit?.();
     ro?.disconnect();
+    if (onWinResize) window.removeEventListener("resize", onWinResize);
     void invoke("term_close", { id }).catch(() => {});
     term?.dispose();
   });
