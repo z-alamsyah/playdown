@@ -192,6 +192,7 @@
 
 {#snippet mainArea()}
   <main class="main">
+    <div class="main-body" class:dock-right={settings.terminalSide === "right"}>
     <div class="editor-area">
     {#if showWelcome}
       <div class="empty">
@@ -217,6 +218,7 @@
     {#if terminalMounted}
       <TerminalPanel hidden={!settings.terminalOpen} />
     {/if}
+    </div>
     <StatusBar onOpenSettings={() => (settingsOpen = true)} />
   </main>
 {/snippet}

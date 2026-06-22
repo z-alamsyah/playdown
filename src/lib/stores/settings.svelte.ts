@@ -1,5 +1,5 @@
 import { LazyStore } from "@tauri-apps/plugin-store";
-import type { Theme, Side, TitlebarColor } from "../types";
+import type { Theme, Side, TitlebarColor, Dock } from "../types";
 import type { SessionState } from "./groups.svelte";
 
 const store = new LazyStore("settings.json");
@@ -26,6 +26,8 @@ class Settings {
   titlebarColor = $state<TitlebarColor>("orange");
   terminalOpen = $state(false);
   terminalHeight = $state(240);
+  terminalWidth = $state(480);
+  terminalSide = $state<Dock>("bottom");
   loaded = $state(false);
 
   async load() {
@@ -40,9 +42,13 @@ class Settings {
       const keymap = await store.get<Record<string, string>>("keymap");
       const titlebarColor = await store.get<TitlebarColor>("titlebarColor");
       const terminalHeight = await store.get<number>("terminalHeight");
+      const terminalWidth = await store.get<number>("terminalWidth");
+      const terminalSide = await store.get<Dock>("terminalSide");
       const terminalOpen = await store.get<boolean>("terminalOpen");
       if (titlebarColor) this.titlebarColor = titlebarColor;
       if (typeof terminalHeight === "number") this.terminalHeight = terminalHeight;
+      if (typeof terminalWidth === "number") this.terminalWidth = terminalWidth;
+      if (terminalSide) this.terminalSide = terminalSide;
       if (typeof terminalOpen === "boolean") this.terminalOpen = terminalOpen;
       if (theme) this.theme = theme;
       if (lastFolder) this.lastFolder = lastFolder;
@@ -88,6 +94,20 @@ class Settings {
   async setTerminalHeight(px: number) {
     this.terminalHeight = px;
     await this.persist("terminalHeight", px);
+  }
+
+  async setTerminalWidth(px: number) {
+    this.terminalWidth = px;
+    await this.persist("terminalWidth", px);
+  }
+
+  async setTerminalSide(side: Dock) {
+    this.terminalSide = side;
+    await this.persist("terminalSide", side);
+  }
+
+  toggleTerminalSide() {
+    void this.setTerminalSide(this.terminalSide === "bottom" ? "right" : "bottom");
   }
 
   async setTheme(theme: Theme) {

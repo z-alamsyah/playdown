@@ -27,6 +27,7 @@ export interface Tab {
 export type ViewMode = "edit" | "preview";
 export type Theme = "dark" | "light";
 export type Side = "left" | "right";
+export type Dock = "bottom" | "right";
 export type TitlebarColor = "orange" | "plain" | "skyblue" | "darkred" | "green";
 export type Direction = "row" | "column";
 export type DropEdge = "center" | "left" | "right" | "top" | "bottom";
