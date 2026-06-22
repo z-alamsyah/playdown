@@ -11,6 +11,7 @@
   // xterm is lazy-loaded, so keep these loosely typed.
   let term: any;
   let fit: any;
+  let canvas: any;
   let unlistenOut: UnlistenFn | undefined;
   let unlistenExit: UnlistenFn | undefined;
   let ro: ResizeObserver | undefined;
@@ -25,25 +26,33 @@
   }
 
   function doFit() {
-    if (!fit || !term) return;
+    if (!fit || !term || el.clientWidth === 0 || el.clientHeight === 0) return;
     try {
       fit.fit();
       void invoke("term_resize", { id, cols: term.cols, rows: term.rows });
     } catch {
-      /* ignore fit before layout */
+      /* ignore fit before layout settles */
     }
   }
 
   onMount(async () => {
-    const [{ Terminal }, { FitAddon }] = await Promise.all([
+    const [{ Terminal }, { FitAddon }, { CanvasAddon }] = await Promise.all([
       import("@xterm/xterm"),
       import("@xterm/addon-fit"),
+      import("@xterm/addon-canvas"),
     ]);
     await import("@xterm/xterm/css/xterm.css");
+    // Cell metrics depend on the monospace font being ready.
+    try {
+      await document.fonts?.ready;
+    } catch {
+      /* fonts API unavailable */
+    }
 
     term = new Terminal({
       fontFamily: MONO,
       fontSize: 13,
+      lineHeight: 1.0,
       cursorBlink: true,
       theme: theme(),
       scrollback: 5000,
@@ -51,7 +60,18 @@
     fit = new FitAddon();
     term.loadAddon(fit);
     term.open(el);
-    fit.fit();
+    // Canvas renderer draws each glyph in its own cell — avoids the
+    // overlapping/garbled text the DOM renderer produces for TUIs.
+    try {
+      canvas = new CanvasAddon();
+      term.loadAddon(canvas);
+    } catch (e) {
+      console.error("canvas addon failed:", e);
+    }
+
+    // Fit only once layout + fonts have settled.
+    await new Promise((r) => requestAnimationFrame(() => r(null)));
+    doFit();
 
     await invoke("term_open", {
       id,
@@ -81,6 +101,18 @@
       requestAnimationFrame(() => {
         doFit();
         term?.focus();
+      });
+    }
+  });
+
+  // Refit when app zoom changes. Tauri's webview zoom doesn't change
+  // devicePixelRatio, so rebuild the canvas glyph atlas too.
+  $effect(() => {
+    settings.zoom;
+    if (ready && active) {
+      requestAnimationFrame(() => {
+        canvas?.clearTextureAtlas?.();
+        doFit();
       });
     }
   });

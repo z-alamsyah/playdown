@@ -1,6 +1,6 @@
 {
   "name": "playdown",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Lightweight markdown editor & viewer",
   "type": "module",
   "scripts": {
@@ -17,6 +17,7 @@
     "@codemirror/commands": "^6.7.1",
     "@codemirror/lang-json": "^6.0.1",
     "@codemirror/lang-markdown": "^6.3.1",
+    "@codemirror/search": "^6.5.8",
     "@codemirror/language": "^6.10.8",
     "@codemirror/language-data": "^6.5.1",
     "@codemirror/state": "^6.5.0",
@@ -29,6 +30,7 @@
     "@tauri-apps/plugin-store": "^2",
     "@xterm/xterm": "^5.5.0",
     "@xterm/addon-fit": "^0.10.0",
+    "@xterm/addon-canvas": "^0.7.0",
     "highlight.js": "^11.11.1",
     "js-yaml": "^4.1.0",
     "markdown-it": "^14.1.0",

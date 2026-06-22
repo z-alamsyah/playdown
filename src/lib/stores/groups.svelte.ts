@@ -8,6 +8,7 @@ import type {
   DropEdge,
 } from "../types";
 import { EditorView } from "@codemirror/view";
+import { openSearchPanel } from "@codemirror/search";
 import { readFile, writeFile } from "../tauri/fs";
 import type { Heading } from "../markdown/render";
 import { fileKind, isImage } from "../fileKind";
@@ -155,6 +156,18 @@ class GroupsStore {
     } catch (e) {
       console.error("Format failed — invalid JSON:", e);
     }
+  }
+
+  /** Focus the active editor and open its find panel. Returns false if the
+   *  active pane isn't an editor (e.g. preview/image). */
+  openSearch(): boolean {
+    const g = this.activeGroup;
+    if (!g || g.viewMode !== "edit") return false;
+    const view = this.editors.get(g.id);
+    if (!view) return false;
+    view.focus();
+    openSearchPanel(view);
+    return true;
   }
 
   // ---- tab navigation ------------------------------------------------------

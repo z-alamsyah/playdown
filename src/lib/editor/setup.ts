@@ -17,6 +17,7 @@ import {
 import { markdown, markdownLanguage } from "@codemirror/lang-markdown";
 import { languages } from "@codemirror/language-data";
 import { json } from "@codemirror/lang-json";
+import { search, searchKeymap } from "@codemirror/search";
 import type { Extension } from "@codemirror/state";
 import {
   syntaxHighlighting,
@@ -91,8 +92,10 @@ export function createEditor(opts: EditorOptions): EditorView {
       syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
       languageExtensions(opts.language),
       EditorView.lineWrapping,
+      search({ top: true }),
       appKeymap,
       keymap.of([
+        ...searchKeymap,
         ...defaultKeymap,
         ...historyKeymap,
         ...foldKeymap,

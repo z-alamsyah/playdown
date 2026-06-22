@@ -49,6 +49,7 @@ pnpm tauri build      # bundle for your OS
 - 🪟 **Split panes** — VSCode-style: drag a tab to a pane edge to split (row/column, nested), resizable dividers; `⌘\` splits right
 - ✏️ **Edit ⇄ Preview** — per-pane toggle (top-right of each group); edit on the left, live preview on the right
 - 🔎 **Quick Open** — `⌘P` fuzzy file finder
+- 🔦 **Find / replace** — `⌘F` in the editor (CodeMirror search)
 - 🧭 **Outline** — headings of the active file in a panel opposite the sidebar; click to jump
 - 🧩 **Frontmatter-aware** — YAML frontmatter highlighted & foldable in the editor, rendered as a metadata card in preview
 - ✨ **GFM** — tables, task lists, code syntax highlighting
@@ -70,6 +71,7 @@ All shortcuts are rebindable in Settings (`⌘,`). Defaults:
 | Shortcut | Action |
 |---|---|
 | `⌘P` | Quick open (find file) |
+| `⌘F` | Find / replace in editor |
 | `⌘O` | Open folder |
 | `⌘S` | Save |
 | `⌘E` | Toggle edit / preview |

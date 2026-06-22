@@ -156,6 +156,14 @@
       }
     }
 
+    // Find in the active editor (focus it first so ⌘F works from anywhere).
+    if ((e.metaKey || e.ctrlKey) && (e.key === "f" || e.key === "F") && !e.shiftKey && !e.altKey) {
+      if (groups.openSearch()) {
+        e.preventDefault();
+        return;
+      }
+    }
+
     const primary = IS_MAC ? e.metaKey : e.ctrlKey;
     if (primary && !e.altKey && !e.shiftKey && /^[1-9]$/.test(e.key)) {
       e.preventDefault();
