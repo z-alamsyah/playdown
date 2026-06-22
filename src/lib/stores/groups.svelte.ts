@@ -320,6 +320,31 @@ class GroupsStore {
     }
   }
 
+  /** Close every tab in the group except unsaved (dirty) ones. */
+  closeAll(groupId: string) {
+    const g = this.group(groupId);
+    if (!g) return;
+    const kept = g.tabs.filter((t) => this.isDirtyPath(t.path));
+    g.tabs = kept;
+    if (kept.length === 0) {
+      if (this.groups.length > 1) this.closeGroup(groupId);
+      else g.activeIndex = -1;
+    } else {
+      g.activeIndex = 0;
+    }
+  }
+
+  /** Close all tabs except the one at `keepIndex` (and any unsaved ones). */
+  closeOthers(groupId: string, keepIndex: number) {
+    const g = this.group(groupId);
+    if (!g) return;
+    const keepPath = g.tabs[keepIndex]?.path;
+    const kept = g.tabs.filter((t, i) => i === keepIndex || this.isDirtyPath(t.path));
+    g.tabs = kept;
+    const idx = kept.findIndex((t) => t.path === keepPath);
+    g.activeIndex = idx >= 0 ? idx : kept.length - 1;
+  }
+
   closeGroup(id: string) {
     if (this.groups.length <= 1 || !this.layout) return;
     this.groups = this.groups.filter((g) => g.id !== id);

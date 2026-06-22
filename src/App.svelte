@@ -105,6 +105,16 @@
         if (g && g.activeIndex >= 0) groups.closeTab(g.id, g.activeIndex);
         break;
       }
+      case "closeOtherTabs": {
+        const g = groups.activeGroup;
+        if (g && g.activeIndex >= 0) groups.closeOthers(g.id, g.activeIndex);
+        break;
+      }
+      case "closeAllTabs": {
+        const g = groups.activeGroup;
+        if (g) groups.closeAll(g.id);
+        break;
+      }
     }
   }
 

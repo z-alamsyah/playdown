@@ -81,6 +81,8 @@ All shortcuts are rebindable in Settings (`⌘,`). Defaults:
 | `⌘⇧F` | Format JSON |
 | `` Ctrl+` `` | Toggle terminal |
 | `⌘W` | Close tab |
+| `⌘⌥W` | Close other tabs |
+| `⌘⇧W` | Close all tabs |
 | `⌘1`–`⌘9` | Select tab |
 | `Ctrl+Tab` / `Ctrl+⇧+Tab` | Cycle tabs |
 | `⌘⌥←` / `⌘⌥→` | Focus previous / next split group |

@@ -1,8 +1,19 @@
 <script lang="ts">
   import type { EditorGroup } from "../types";
   import { groups } from "../stores/groups.svelte";
+  import { ui } from "../stores/ui.svelte";
 
   let { group }: { group: EditorGroup } = $props();
+
+  function onTabContext(e: MouseEvent, i: number) {
+    e.preventDefault();
+    e.stopPropagation();
+    ui.showMenu(e.clientX, e.clientY, [
+      { label: "Close", action: () => groups.closeTab(group.id, i) },
+      { label: "Close Others", action: () => groups.closeOthers(group.id, i) },
+      { label: "Close All", separator: true, action: () => groups.closeAll(group.id) },
+    ]);
+  }
 
   // Disambiguating parent folder when two open tabs share a name.
   function hint(index: number): string {
@@ -34,6 +45,7 @@
       ondragstart={(e) => onDragStart(e, i)}
       onclick={() => groups.setActiveTab(group.id, i)}
       onkeydown={(e) => e.key === "Enter" && groups.setActiveTab(group.id, i)}
+      oncontextmenu={(e) => onTabContext(e, i)}
     >
       <span class="tab-name">{tab.name}</span>
       {#if hint(i)}<span class="tab-hint">{hint(i)}</span>{/if}

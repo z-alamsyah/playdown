@@ -8,6 +8,8 @@ export type Action =
   | "toggleSidebar"
   | "toggleOutline"
   | "closeTab"
+  | "closeOtherTabs"
+  | "closeAllTabs"
   | "splitRight"
   | "nextTab"
   | "prevTab"
@@ -33,6 +35,8 @@ export const ACTIONS: ActionDef[] = [
   { id: "toggleSidebar", label: "Toggle sidebar" },
   { id: "toggleOutline", label: "Toggle outline" },
   { id: "closeTab", label: "Close tab" },
+  { id: "closeOtherTabs", label: "Close other tabs" },
+  { id: "closeAllTabs", label: "Close all tabs" },
   { id: "splitRight", label: "Split right" },
   { id: "nextTab", label: "Next tab" },
   { id: "prevTab", label: "Previous tab" },
@@ -54,6 +58,8 @@ const DEFAULTS: Record<Action, string> = {
   toggleSidebar: "Mod+B",
   toggleOutline: "Mod+Shift+O",
   closeTab: "Mod+W",
+  closeOtherTabs: "Mod+Alt+W",
+  closeAllTabs: "Mod+Shift+W",
   splitRight: "Mod+\\",
   nextTab: "Ctrl+Tab",
   prevTab: "Ctrl+Shift+Tab",
