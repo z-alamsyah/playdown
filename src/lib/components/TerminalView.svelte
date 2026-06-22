@@ -137,7 +137,14 @@
     });
 
     term.onData((d: string) => void invoke("term_write", { id, data: d }));
-    unlistenOut = await listen<string>(`term://${id}`, (e) => term.write(e.payload));
+    unlistenOut = await listen<string>(`term://${id}`, (e) => {
+      // Decode base64 → bytes; xterm decodes UTF-8 statefully (handles
+      // multi-byte glyphs split across PTY read chunks).
+      const bin = atob(e.payload);
+      const bytes = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+      term.write(bytes);
+    });
     unlistenExit = await listen(`term-exit://${id}`, () =>
       term.write("\r\n\x1b[90m[process exited]\x1b[0m\r\n"),
     );

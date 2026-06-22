@@ -1,3 +1,4 @@
+use base64::Engine;
 use portable_pty::{native_pty_system, Child, CommandBuilder, MasterPty, PtySize};
 use std::collections::HashMap;
 use std::io::{Read, Write};
@@ -73,8 +74,11 @@ pub fn term_open(
             match reader.read(&mut buf) {
                 Ok(0) | Err(_) => break,
                 Ok(n) => {
-                    let chunk = String::from_utf8_lossy(&buf[..n]).into_owned();
-                    let _ = app2.emit(&out_event, chunk);
+                    // Emit raw bytes (base64) — decoding UTF-8 per chunk would
+                    // corrupt multi-byte glyphs split across read boundaries.
+                    // xterm.write(Uint8Array) decodes statefully across writes.
+                    let b64 = base64::engine::general_purpose::STANDARD.encode(&buf[..n]);
+                    let _ = app2.emit(&out_event, b64);
                 }
             }
         }
