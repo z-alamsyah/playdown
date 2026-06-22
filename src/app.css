@@ -1307,6 +1307,7 @@ kbd {
   display: flex;
   flex-direction: column;
   position: relative;
+  overflow: hidden;
 }
 .terminal-panel.hidden {
   display: none;
@@ -1340,7 +1341,9 @@ kbd {
 .term-view {
   position: absolute;
   inset: 0;
-  padding: 6px 4px 6px 10px;
+  /* extra bottom space so the last TUI row isn't clipped by the status bar
+     at fractional zoom */
+  padding: 6px 4px 14px 10px;
 }
 .term-view.hidden {
   visibility: hidden;

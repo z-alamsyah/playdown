@@ -35,7 +35,9 @@
     });
   }
 
-  const MONO = 'ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace';
+  // JuliaMono is bundled (lazy) for full glyph coverage — braille,
+  // box-drawing, dingbats — so TUI spinners/borders render instead of tofu.
+  const MONO = '"JuliaMono", ui-monospace, "SF Mono", Menlo, Consolas, monospace';
   const BASE_FONT = 13;
 
   // Counter the webview zoom so the terminal's on-screen size — and thus its
@@ -67,9 +69,11 @@
       import("@xterm/addon-fit"),
     ]);
     await import("@xterm/xterm/css/xterm.css");
-    // Cell metrics depend on the monospace font being ready.
+    await import("../assets/fonts/juliamono.css");
+    // Cell metrics depend on the bundled font being loaded before measuring.
     try {
-      await document.fonts?.ready;
+      await document.fonts.load(`${zoomedFont()}px "JuliaMono"`);
+      await document.fonts.ready;
     } catch {
       /* fonts API unavailable */
     }
