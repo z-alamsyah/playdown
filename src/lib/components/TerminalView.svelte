@@ -36,6 +36,14 @@
   }
 
   const MONO = 'ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace';
+  const BASE_FONT = 13;
+
+  // Counter the webview zoom so the terminal's on-screen size — and thus its
+  // column count — stays constant regardless of app zoom. Keeps a running TUI
+  // from reflowing/garbling when you zoom the app.
+  function zoomedFont() {
+    return Math.max(8, Math.round(BASE_FONT / settings.zoom));
+  }
 
   function theme() {
     return settings.theme === "dark"
@@ -68,7 +76,7 @@
 
     term = new Terminal({
       fontFamily: MONO,
-      fontSize: 13,
+      fontSize: zoomedFont(),
       lineHeight: 1.0,
       cursorBlink: true,
       theme: theme(),
@@ -140,14 +148,15 @@
     }
   });
 
-  // Refit when app zoom changes. Tauri's webview zoom doesn't change
-  // devicePixelRatio, so rebuild the canvas glyph atlas too.
+  // On app zoom, counter it via font size so the column count stays put
+  // (no SIGWINCH → running TUIs don't reflow). Rebuild the glyph atlas.
   $effect(() => {
-    settings.zoom;
-    if (ready && active) {
+    const z = settings.zoom;
+    if (ready && term) {
+      term.options.fontSize = Math.max(8, Math.round(BASE_FONT / z));
       requestAnimationFrame(() => {
         renderer?.clearTextureAtlas?.();
-        doFit();
+        if (active) doFit();
       });
     }
   });
