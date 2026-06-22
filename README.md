@@ -14,13 +14,14 @@ Built for people who live in markdown all day — skills, agents, PRDs, manifest
 
 ## Install
 
-### macOS — one line (recommended)
+### macOS / Linux — one line (recommended)
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/z-alamsyah/playdown/main/install.sh | bash
 ```
 
-This downloads the latest `.dmg`, copies **Playdown** to `/Applications`, clears the quarantine flag (the app is unsigned), and launches it.
+- **macOS:** installs the `.dmg` to `/Applications`, clears the quarantine flag (unsigned), launches it, and adds the `playdown` command.
+- **Linux:** installs the `.deb` (Debian/Ubuntu/**WSL**), `.rpm` (Fedora), or falls back to the AppImage in `~/.local/bin`. The `playdown` command works from your shell.
 
 ### macOS — manual (.dmg)
 
@@ -28,9 +29,14 @@ This downloads the latest `.dmg`, copies **Playdown** to `/Applications`, clears
 2. Open it, drag **Playdown** → **Applications**.
 3. First launch only: right-click **Playdown** → **Open** (it's unsigned, so Gatekeeper asks once).
 
-### Windows / Linux
+### Linux / WSL notes
 
-Grab the installer for your platform from [Releases](https://github.com/z-alamsyah/playdown/releases/latest) (`.msi` / `.AppImage` / `.deb`), produced by the release CI.
+- Needs `libwebkit2gtk-4.1` (the `.deb`/`.rpm` pull it in automatically).
+- **WSL:** GUI apps need **WSLg** (Windows 11 / recent Windows 10). Run `wsl --update` if the window doesn't appear.
+
+### Windows
+
+Download the `.msi` or `.exe` from [Releases](https://github.com/z-alamsyah/playdown/releases/latest).
 
 ### From source
 
