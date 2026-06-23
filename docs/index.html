@@ -199,6 +199,7 @@
           <div class="stat"><div class="n">~5 MB</div><div class="l">app bundle</div></div>
           <div class="stat"><div class="n">~70 MB</div><div class="l">idle RAM</div></div>
           <div class="stat"><div class="n">&lt; 0.5s</div><div class="l">cold start</div></div>
+          <div class="stat"><div class="n" id="dl-count">—</div><div class="l">downloads</div></div>
         </div>
       </div>
     </header>
@@ -319,6 +320,28 @@
           setTimeout(() => (b.textContent = "Copy"), 1600);
         });
       }
+
+      // Live download counter — summed from the public GitHub release API in
+      // the visitor's browser. No telemetry; nothing is sent from the app.
+      (async () => {
+        const el = document.getElementById("dl-count");
+        try {
+          const res = await fetch(
+            "https://api.github.com/repos/z-alamsyah/playdown/releases",
+          );
+          if (!res.ok) throw new Error("api");
+          const releases = await res.json();
+          let total = 0;
+          for (const r of releases)
+            for (const a of r.assets || []) total += a.download_count || 0;
+          el.textContent =
+            total >= 1000
+              ? (total / 1000).toFixed(1).replace(/\.0$/, "") + "k"
+              : String(total);
+        } catch {
+          el.closest(".stat").style.display = "none";
+        }
+      })();
     </script>
   </body>
 </html>

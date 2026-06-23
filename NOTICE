@@ -1,0 +1,35 @@
+Playdown
+Copyright (c) 2026 z-alamsyah
+https://github.com/z-alamsyah/playdown
+
+This software is licensed under the MIT License (see the LICENSE file).
+
+----------------------------------------------------------------------
+Attribution
+----------------------------------------------------------------------
+Derivative works (forks, clones, modified or rebuilt versions) must
+retain the copyright notice above and the full MIT License text, as
+required by the license.
+
+----------------------------------------------------------------------
+Trademark
+----------------------------------------------------------------------
+The MIT License grants rights to the source code only. It does NOT grant
+rights to the Playdown name or logo.
+
+"Playdown", the Playdown name, and the Playdown logo (📝 on orange) are
+unregistered trademarks of z-alamsyah.
+
+If you distribute a modified version, you must:
+  - ship it under a different application name (do not call it "Playdown"); and
+  - not use the Playdown logo as your application's primary mark.
+
+You may — and are encouraged to — state that your project is
+"based on Playdown" or "a fork of Playdown", with a link back to
+https://github.com/z-alamsyah/playdown.
+
+----------------------------------------------------------------------
+No telemetry
+----------------------------------------------------------------------
+Playdown contains no analytics or telemetry. Usage is estimated only from
+public GitHub release download counts; nothing is sent from the app.

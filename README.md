@@ -1,5 +1,10 @@
 # 📝 Playdown
 
+[![Downloads](https://img.shields.io/github/downloads/z-alamsyah/playdown/total?label=downloads&color=ff3e00)](https://github.com/z-alamsyah/playdown/releases)
+[![Latest release](https://img.shields.io/github/v/release/z-alamsyah/playdown?label=version)](https://github.com/z-alamsyah/playdown/releases/latest)
+[![Stars](https://img.shields.io/github/stars/z-alamsyah/playdown)](https://github.com/z-alamsyah/playdown/stargazers)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+
 A lightweight, cross-platform **markdown editor & viewer** built with [Tauri v2](https://tauri.app) + [Svelte 5](https://svelte.dev).
 
 Built for people who live in markdown all day — skills, agents, PRDs, manifests — and don't want a full IDE eating hundreds of MB of RAM just to read a `.md` file.
@@ -115,4 +120,14 @@ pnpm tauri build    # produce a distributable bundle (.app / .dmg / …)
 
 ## License
 
-MIT
+MIT — see [LICENSE](LICENSE).
+
+## Attribution & forks
+
+Playdown is open source — fork, clone, and modify away. A few asks:
+
+- **Keep the notice.** The MIT license requires derivative works to retain the copyright and license text (`Copyright (c) 2026 z-alamsyah`). See [NOTICE](NOTICE).
+- **Rename your fork.** The license covers the *code*, not the brand. **"Playdown"** and its logo are trademarks of z-alamsyah — please ship modified versions under a different name and don't use the Playdown logo as your app's primary mark.
+- **Credit the origin.** You're encouraged to state your project is **"based on Playdown"** (or *a fork of Playdown*), linking back to <https://github.com/z-alamsyah/playdown>.
+
+> **No telemetry, ever.** The app phones nothing home. Usage is gauged only from public GitHub release **download counts** ([shields badge](https://github.com/z-alamsyah/playdown/releases) above).
