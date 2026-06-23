@@ -1,6 +1,6 @@
 {
   "name": "playdown",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "Lightweight markdown editor & viewer",
   "type": "module",
   "scripts": {

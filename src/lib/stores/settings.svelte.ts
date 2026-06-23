@@ -120,7 +120,7 @@ class Settings {
     void this.setTheme(this.theme === "dark" ? "light" : "dark");
   }
 
-  async setLastFolder(path: string) {
+  async setLastFolder(path: string | null) {
     this.lastFolder = path;
     await this.persist("lastFolder", path);
   }

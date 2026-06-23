@@ -50,6 +50,14 @@ class Workspace {
     }
   }
 
+  /** Close the current folder — clears the tree and forgets it for next launch. */
+  async clear() {
+    this.root = null;
+    this.rootName = "";
+    this.tree = [];
+    await settings.setLastFolder(null);
+  }
+
   /** Re-read the tree in place (no loading flip) so the sidebar keeps its
    *  expanded folders + selection after a create/rename/delete/move. */
   async refresh() {

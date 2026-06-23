@@ -131,6 +131,48 @@ fn create_dir(path: String) -> Result<(), String> {
     fs::create_dir_all(&path).map_err(|e| e.to_string())
 }
 
+/// Pick a non-colliding path in `dir` for `name`, appending " (n)" before the
+/// extension if needed.
+fn unique_path(dir: &Path, name: &str) -> PathBuf {
+    let first = dir.join(name);
+    if !first.exists() {
+        return first;
+    }
+    let np = Path::new(name);
+    let stem = np.file_stem().and_then(|s| s.to_str()).unwrap_or(name);
+    let ext = np.extension().and_then(|s| s.to_str());
+    let mut i = 1;
+    loop {
+        let fname = match ext {
+            Some(e) => format!("{stem} ({i}).{e}"),
+            None => format!("{stem} ({i})"),
+        };
+        let cand = dir.join(fname);
+        if !cand.exists() {
+            return cand;
+        }
+        i += 1;
+    }
+}
+
+/// Import an external file (dropped from Finder/Explorer) into `dir`, writing
+/// the given base64 bytes. Auto-suffixes the name on collision; returns the
+/// final path.
+#[tauri::command]
+fn import_file(dir: String, name: String, data_base64: String) -> Result<String, String> {
+    use base64::Engine;
+    let bytes = base64::engine::general_purpose::STANDARD
+        .decode(data_base64.as_bytes())
+        .map_err(|e| e.to_string())?;
+    let dir_p = Path::new(&dir);
+    if !dir_p.is_dir() {
+        return Err(format!("Not a directory: {dir}"));
+    }
+    let dest = unique_path(dir_p, &name);
+    fs::write(&dest, bytes).map_err(|e| e.to_string())?;
+    Ok(dest.to_string_lossy().into_owned())
+}
+
 /// Move a file or folder to the OS trash (recoverable).
 #[tauri::command]
 fn delete_path(path: String) -> Result<(), String> {
@@ -246,6 +288,7 @@ pub fn run() {
             write_file,
             create_file,
             create_dir,
+            import_file,
             delete_path,
             rename_path,
             read_image_data_url,

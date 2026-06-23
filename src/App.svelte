@@ -11,6 +11,7 @@
   import ContextMenu from "./lib/components/ContextMenu.svelte";
   import PromptModal from "./lib/components/PromptModal.svelte";
   import TerminalPanel from "./lib/components/TerminalPanel.svelte";
+  import logoUrl from "./lib/assets/logo.png";
   import { workspace } from "./lib/stores/workspace.svelte";
   import { groups } from "./lib/stores/groups.svelte";
   import { terminal } from "./lib/stores/terminal.svelte";
@@ -177,7 +178,7 @@
     <div class="editor-area">
     {#if showWelcome}
       <div class="empty">
-        <div class="empty-logo">📝</div>
+        <img class="empty-logo" src={logoUrl} alt="Playdown" />
         <h1>Playdown</h1>
         <p class="empty-sub">Lightweight markdown editor &amp; viewer</p>
         <button class="primary" onclick={() => workspace.openFolder()}>
@@ -205,7 +206,8 @@
 
 <div class="window">
   <div class="titlebar" data-tauri-drag-region>
-    <span class="titlebar-title">📝 Playdown</span>
+    <img class="titlebar-logo" src={logoUrl} alt="" />
+    <span class="titlebar-title">Playdown</span>
     {#if groups.activeTab}
       <span class="titlebar-file">— {groups.activeTab.name}</span>
     {/if}

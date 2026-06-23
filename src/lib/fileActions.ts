@@ -3,7 +3,7 @@ import { ui, type MenuItem } from "./stores/ui.svelte";
 import { workspace } from "./stores/workspace.svelte";
 import { groups } from "./stores/groups.svelte";
 import { copyText } from "./tauri/clipboard";
-import { deletePath, renamePath } from "./tauri/fs";
+import { deletePath, renamePath, importFile } from "./tauri/fs";
 import type { FileNode } from "./types";
 
 export function parentDir(p: string): string {
@@ -38,6 +38,40 @@ export async function moveEntry(src: string, destDir: string) {
   } catch (e) {
     console.error("Move failed:", e);
   }
+}
+
+/** Copy files dropped from the OS file manager (Finder/Explorer) into `dir`.
+ *  The webview can't see their source paths, so read the bytes and write them
+ *  via Rust. Names that collide get a " (n)" suffix. */
+export async function importExternalFiles(files: FileList, dir: string) {
+  for (const file of Array.from(files)) {
+    try {
+      const bytes = new Uint8Array(await file.arrayBuffer());
+      let bin = "";
+      const CHUNK = 0x8000;
+      for (let i = 0; i < bytes.length; i += CHUNK) {
+        bin += String.fromCharCode(...bytes.subarray(i, i + CHUNK));
+      }
+      await importFile(dir, file.name, btoa(bin));
+    } catch (e) {
+      console.error("Import failed:", file.name, e);
+    }
+  }
+  await workspace.refresh();
+}
+
+/** Close the open folder → back to the welcome screen (confirms if unsaved). */
+export async function closeFolder() {
+  if (groups.anyDirty) {
+    const ok = await confirm("Close the folder? Unsaved changes will be lost.", {
+      title: "Close Folder",
+      kind: "warning",
+    });
+    if (!ok) return;
+  }
+  groups.reset();
+  ui.selectedPath = null;
+  await workspace.clear();
 }
 
 /** Prompt to rename a file/folder by path; updates open tabs + tree. */

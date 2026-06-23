@@ -2,7 +2,7 @@
   import type { FileNode } from "../types";
   import { groups } from "../stores/groups.svelte";
   import { ui } from "../stores/ui.svelte";
-  import { nodeMenuItems, moveEntry } from "../fileActions";
+  import { nodeMenuItems, moveEntry, importExternalFiles } from "../fileActions";
   import Self from "./FileTree.svelte";
 
   let { nodes, depth }: { nodes: FileNode[]; depth: number } = $props();
@@ -33,15 +33,29 @@
     return Array.from(e.dataTransfer?.types ?? []).includes(MIME);
   }
 
+  // External files dragged from Finder / Explorer carry the "Files" type.
+  function hasFiles(e: DragEvent) {
+    return Array.from(e.dataTransfer?.types ?? []).includes("Files");
+  }
+
   function onDirOver(e: DragEvent, node: FileNode) {
-    if (!isMove(e)) return;
+    const external = hasFiles(e);
+    if (!isMove(e) && !external) return;
     e.preventDefault();
     e.stopPropagation();
-    if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
+    if (e.dataTransfer) e.dataTransfer.dropEffect = external ? "copy" : "move";
     dragOver = node.path;
   }
 
   function onDirDrop(e: DragEvent, node: FileNode) {
+    const files = e.dataTransfer?.files;
+    if (files && files.length) {
+      e.preventDefault();
+      e.stopPropagation();
+      dragOver = null;
+      void importExternalFiles(files, node.path);
+      return;
+    }
     if (!isMove(e)) return;
     e.preventDefault();
     e.stopPropagation();

@@ -31,3 +31,8 @@ export const renamePath = (from: string, to: string) =>
 /** Read an image as a base64 data URL. */
 export const readImageDataUrl = (path: string) =>
   invoke<string>("read_image_data_url", { path });
+
+/** Write external (dropped) file bytes (base64) into `dir`; auto-uniquifies
+ *  the name on collision. Returns the written path. */
+export const importFile = (dir: string, name: string, dataBase64: string) =>
+  invoke<string>("import_file", { dir, name, dataBase64 });

@@ -116,6 +116,22 @@ class GroupsStore {
     }
   }
 
+  /** True if any open document has unsaved changes. */
+  get anyDirty(): boolean {
+    return Object.keys(this.documents).some((p) => this.isDirtyPath(p));
+  }
+
+  /** Discard all groups, tabs, and buffers; start from one empty group. */
+  reset() {
+    this.documents = {};
+    this.groups = [];
+    this.layout = null;
+    this.activeGroupId = "";
+    this.editors.clear();
+    this.previews.clear();
+    this.ensureInitial();
+  }
+
   setActiveGroup(id: string) {
     if (this.group(id)) this.activeGroupId = id;
   }
