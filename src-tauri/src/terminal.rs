@@ -52,6 +52,11 @@ pub fn term_open(
         .map_err(|e| e.to_string())?;
 
     let mut cmd = CommandBuilder::new(default_shell_path());
+    // Spawn a login shell so it sources the user's profile (~/.zprofile etc.).
+    // A GUI app inherits launchd's minimal PATH, so without this, Homebrew tools
+    // (tmux, etc.) in /opt/homebrew/bin wouldn't resolve. Matches Terminal.app.
+    #[cfg(unix)]
+    cmd.arg("-l");
     if let Some(dir) = cwd {
         if std::path::Path::new(&dir).is_dir() {
             cmd.cwd(dir);

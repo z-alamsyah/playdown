@@ -101,8 +101,18 @@
       case "zoomReset": zoomReset(); break;
       case "formatDoc": groups.formatActive(); break;
       case "toggleTerminal": settings.toggleTerminal(); break;
+      case "newTerminal":
+        if (!settings.terminalOpen) settings.setTerminalOpen(true);
+        terminal.create();
+        break;
       case "nextTerminal": if (settings.terminalOpen) terminal.cycle(1); break;
       case "prevTerminal": if (settings.terminalOpen) terminal.cycle(-1); break;
+      case "closeTerminal":
+        if (terminal.activeId) {
+          terminal.close(terminal.activeId);
+          if (terminal.sessions.length === 0) settings.setTerminalOpen(false);
+        }
+        break;
       case "openSettings": settingsOpen = true; break;
       case "closeTab": {
         const g = groups.activeGroup;
@@ -120,6 +130,11 @@
         break;
       }
     }
+  }
+
+  // True when keyboard focus is inside the terminal panel (its xterm textarea).
+  function terminalFocused(): boolean {
+    return !!(document.activeElement as HTMLElement | null)?.closest(".terminal-panel");
   }
 
   function handleKeydown(e: KeyboardEvent) {
@@ -155,6 +170,9 @@
 
     const action = keymap.match(e);
     if (!action) return;
+    // ⌘X/Ctrl+X stays "cut" in editors & inputs — only close a terminal when
+    // the terminal itself is focused.
+    if (action === "closeTerminal" && !terminalFocused()) return;
     e.preventDefault();
     runAction(action);
   }
