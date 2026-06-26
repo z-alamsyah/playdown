@@ -92,7 +92,7 @@ button {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 0 12px 0 78px;
+  padding: 0 12px 0 94px;
   font-size: 12px;
   user-select: none;
   overflow: hidden;
@@ -319,6 +319,9 @@ button {
 }
 .row.file.active.selected {
   background: var(--accent-soft);
+}
+.fticon {
+  flex-shrink: 0;
 }
 
 /* ============================================================
@@ -847,10 +850,26 @@ kbd {
 .tab.active {
   background: var(--bg);
   color: var(--text);
+  font-weight: 600;
   box-shadow: none;
 }
+/* active tab of the focused group — solid fill, bold (distinct from the
+   soft-tinted terminal session tab) */
 .tab.current {
-  box-shadow: inset 0 -2px 0 var(--accent);
+  background: var(--accent);
+  color: #fff;
+  font-weight: 700;
+  box-shadow: none;
+}
+.tab.current .dirty {
+  color: #fff;
+}
+.tab.current .close {
+  color: rgba(255, 255, 255, 0.75);
+}
+.tab.current .close:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
 }
 
 .group-pane {
@@ -1336,6 +1355,15 @@ kbd {
 .terminal-panel.hidden {
   display: none;
 }
+/* No file open → terminal fills the whole main area (no empty editor pane). */
+.main-body.term-full > .terminal-panel {
+  flex: 1 1 auto;
+  width: auto !important;
+  height: auto !important;
+}
+.main-body.term-full .terminal-resize {
+  display: none;
+}
 
 .terminal-body {
   flex: 1;
@@ -1387,6 +1415,7 @@ kbd {
 }
 .th-title {
   font-size: 11px;
+  font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--text-faint);
@@ -1418,14 +1447,20 @@ kbd {
   white-space: nowrap;
   cursor: pointer;
   flex-shrink: 0;
+  font-weight: 600;
 }
 .term-tab:hover {
   background: var(--bg-hover);
 }
 .term-tab.on {
-  background: var(--accent-soft);
-  color: var(--accent);
-  border-color: var(--accent);
+  background: #e8dcc0;
+  color: #1a1b1e;
+  border-color: #e8dcc0;
+  font-weight: 700;
+}
+.term-tab.on .tt-kill {
+  color: #1a1b1e;
+  opacity: 0.7;
 }
 .tt-name {
   overflow: hidden;

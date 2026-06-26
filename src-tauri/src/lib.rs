@@ -3,7 +3,11 @@ mod terminal;
 use serde::Serialize;
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicU32, Ordering};
 use tauri::{Emitter, Manager};
+
+/// Monotonic counter for unique secondary-window labels (win-1, win-2, …).
+static WIN_SEQ: AtomicU32 = AtomicU32::new(1);
 
 /// The folder path passed on the command line at launch (`playdown <path>`).
 struct LaunchPath(Option<String>);
@@ -223,6 +227,92 @@ fn get_launch_path(state: tauri::State<LaunchPath>) -> Option<String> {
     state.0.clone()
 }
 
+/// Open a new, independent Playdown window (its own webview → its own project,
+/// tabs, terminal, and per-window settings). Shared by the command + File menu.
+fn open_new_window(app: &tauri::AppHandle) -> Result<(), String> {
+    let n = WIN_SEQ.fetch_add(1, Ordering::Relaxed);
+    let label = format!("win-{n}");
+    #[allow(unused_mut)]
+    let mut builder =
+        tauri::WebviewWindowBuilder::new(app, &label, tauri::WebviewUrl::App("index.html".into()))
+            .title("Playdown")
+            .inner_size(1100.0, 720.0)
+            .min_inner_size(600.0, 400.0)
+            .hidden_title(true)
+            .disable_drag_drop_handler();
+    #[cfg(target_os = "macos")]
+    {
+        builder = builder.title_bar_style(tauri::TitleBarStyle::Overlay);
+    }
+    builder.build().map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+#[tauri::command]
+fn new_window(app: tauri::AppHandle) -> Result<(), String> {
+    open_new_window(&app)
+}
+
+/// Build the app menu (File ▸ New Window) and wire its events.
+fn setup_menu(app: &tauri::App) -> Result<(), Box<dyn std::error::Error>> {
+    use tauri::menu::{MenuBuilder, MenuItemBuilder, SubmenuBuilder};
+    let h = app.handle().clone();
+
+    let new_win = MenuItemBuilder::new("New Window")
+        .id("new_window")
+        .accelerator("CmdOrCtrl+Shift+N")
+        .build(&h)?;
+    let file = SubmenuBuilder::new(&h, "File")
+        .item(&new_win)
+        .separator()
+        .close_window()
+        .build()?;
+
+    let mut mb = MenuBuilder::new(&h);
+    #[cfg(target_os = "macos")]
+    {
+        let app_menu = SubmenuBuilder::new(&h, "Playdown")
+            .about(None)
+            .separator()
+            .services()
+            .separator()
+            .hide()
+            .hide_others()
+            .show_all()
+            .separator()
+            .quit()
+            .build()?;
+        let edit = SubmenuBuilder::new(&h, "Edit")
+            .undo()
+            .redo()
+            .separator()
+            .cut()
+            .copy()
+            .paste()
+            .select_all()
+            .build()?;
+        let window = SubmenuBuilder::new(&h, "Window")
+            .minimize()
+            .separator()
+            .close_window()
+            .build()?;
+        mb = mb.items(&[&app_menu, &file, &edit, &window]);
+    }
+    #[cfg(not(target_os = "macos"))]
+    {
+        mb = mb.item(&file);
+    }
+
+    let menu = mb.build()?;
+    app.set_menu(menu)?;
+    app.on_menu_event(|app, event| {
+        if event.id().0.as_str() == "new_window" {
+            let _ = open_new_window(app);
+        }
+    });
+    Ok(())
+}
+
 #[cfg(unix)]
 #[tauri::command]
 fn install_cli() -> Result<String, String> {
@@ -281,6 +371,10 @@ pub fn run() {
         .plugin(tauri_plugin_clipboard_manager::init())
         .manage(launch)
         .manage(terminal::TerminalState::default())
+        .setup(|app| {
+            setup_menu(app)?;
+            Ok(())
+        })
         .invoke_handler(tauri::generate_handler![
             list_dir_tree,
             is_dir,
@@ -293,6 +387,7 @@ pub fn run() {
             rename_path,
             read_image_data_url,
             get_launch_path,
+            new_window,
             install_cli,
             terminal::default_shell,
             terminal::term_open,

@@ -36,6 +36,12 @@
   const showWelcome = $derived(
     !workspace.root && !groups.groups.some((g) => g.tabs.length),
   );
+  // No file open + terminal open → let the terminal fill the whole main area
+  // instead of stranding an empty editor pane above it. Opening a file flips
+  // this off, so the editor reappears and the layout auto-splits.
+  const termFull = $derived(
+    settings.terminalOpen && !groups.groups.some((g) => g.tabs.length),
+  );
 
   onMount(async () => {
     await settings.load();
@@ -192,7 +198,8 @@
 
 {#snippet mainArea()}
   <main class="main">
-    <div class="main-body" class:dock-right={settings.terminalSide === "right"}>
+    <div class="main-body" class:dock-right={settings.terminalSide === "right"} class:term-full={termFull}>
+    {#if !termFull}
     <div class="editor-area">
     {#if showWelcome}
       <div class="empty">
@@ -214,6 +221,7 @@
       <Layout node={groups.layout} />
     {/if}
     </div>
+    {/if}
     {#if terminalMounted}
       <TerminalPanel hidden={!settings.terminalOpen} />
     {/if}

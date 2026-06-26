@@ -102,18 +102,36 @@
       .mock-title { height: 30px; background: var(--orange); display: flex; align-items: center; padding-left: 64px; gap: 7px; color: #fff; font-size: 12px; font-weight: 700; position: relative; }
       .mock-title .lights { position: absolute; left: 12px; display: flex; gap: 7px; }
       .mock-title .lights i { width: 11px; height: 11px; border-radius: 50%; display: block; }
-      .mock-body { display: grid; grid-template-columns: 150px 1fr 150px; height: 320px; font-size: 12px; }
-      .mock-side { background: #121319; border-right: 1px solid var(--border); padding: 10px; color: var(--muted); }
+      /* editor tab strip */
+      .mock-tabs { display: flex; background: var(--bg2); border-bottom: 1px solid var(--border); font-size: 11px; overflow: hidden; }
+      .mtab { padding: 7px 12px; color: var(--faint); border-right: 1px solid var(--border); white-space: nowrap; font-family: var(--mono); }
+      .mtab.on { background: rgba(255, 62, 0, 0.14); color: var(--text); box-shadow: inset 0 -2px 0 var(--orange); }
+      .mock-body { display: grid; grid-template-columns: 140px 1fr 150px; height: 196px; font-size: 12px; }
+      .mock-side { background: #121319; border-right: 1px solid var(--border); padding: 10px; color: var(--muted); overflow: hidden; }
       .mock-side.r { border-right: none; border-left: 1px solid var(--border); }
       .mock-side .h { font-size: 10px; letter-spacing: 0.08em; color: var(--faint); text-transform: uppercase; margin-bottom: 8px; }
       .mock-side .row { padding: 3px 4px; border-radius: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
       .mock-side .row.on { background: rgba(255, 62, 0, 0.14); color: var(--orange); }
-      .mock-main { padding: 18px 22px; overflow: hidden; }
-      .mock-main h2 { font-size: 19px; color: var(--text); border-bottom: 1px solid var(--border); padding-bottom: 8px; margin-bottom: 12px; letter-spacing: -0.01em; }
-      .mock-main p, .mock-main li { color: var(--muted); margin-bottom: 7px; }
+      .mock-main { padding: 14px 18px; overflow: hidden; }
+      .mock-main p { color: var(--muted); margin-bottom: 7px; font-size: 12px; }
       .mock-main code { font-family: var(--mono); background: #0e0f13; padding: 1px 6px; border-radius: 4px; color: #e0a96d; }
-      .mock-main .tag { color: var(--orange); font-family: var(--mono); }
-      @media (max-width: 680px) { .mock-body { grid-template-columns: 1fr; } .mock-side { display: none; } }
+      .fmcard { background: #0e0f13; border: 1px solid var(--border); border-radius: 8px; padding: 9px 12px; margin-bottom: 12px; font-family: var(--mono); font-size: 11px; line-height: 1.75; }
+      .fmcard .k { color: var(--orange); display: inline-block; width: 52px; }
+      /* terminal panel */
+      .mock-term { border-top: 1px solid var(--border); background: #0a0b0e; }
+      .mterm-head { display: flex; align-items: center; gap: 7px; padding: 5px 10px; font-size: 10px; letter-spacing: 0.08em; color: var(--faint); text-transform: uppercase; border-bottom: 1px solid var(--border); }
+      .mtt { font-family: var(--mono); text-transform: none; letter-spacing: 0; padding: 2px 7px; border-radius: 5px; background: #16171d; color: var(--muted); }
+      .mtt.on { background: rgba(255, 62, 0, 0.14); color: var(--orange); }
+      .mterm-body { display: grid; grid-template-columns: 1fr 1fr; height: 168px; font-family: var(--mono); font-size: 11px; }
+      .tcol { padding: 8px 11px; overflow: hidden; }
+      .tcol + .tcol { border-left: 1px solid var(--border); }
+      .tline { color: var(--muted); line-height: 1.65; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .tline.dim { color: var(--faint); }
+      .tline .g { color: #3ddc84; } .tline .o { color: var(--orange); } .tline .r { color: #ff6b6b; } .tline .b { color: #4c9aff; }
+      .cursor { color: var(--orange); }
+      .mock-cap { text-align: center; color: var(--faint); font-size: 13px; margin-top: 14px; }
+      .mock-cap b { color: var(--muted); font-weight: 600; }
+      @media (max-width: 680px) { .mock-body { grid-template-columns: 1fr; } .mock-side { display: none; } .mterm-body { grid-template-columns: 1fr; } .tcol + .tcol { display: none; } }
 
       /* sections */
       section.block { position: relative; z-index: 1; padding: 80px 0; }
@@ -184,12 +202,12 @@
 
     <header>
       <div class="wrap">
-        <span class="eyebrow">~5 MB · Mac · Windows · Linux</span>
-        <h1>Markdown,<br />without the <span class="accent">IDE tax</span>.</h1>
+        <span class="eyebrow">Markdown + native terminal · ~5 MB · Mac · Windows · Linux</span>
+        <h1>The home base for<br /><span class="accent">agentic-AI</span> work.</h1>
         <p class="sub">
-          A featherweight markdown editor &amp; viewer that opens before your code editor
-          finishes loading. Splits, outline, JSON, images, a built-in terminal — all in a
-          ~5 MB app that sips RAM.
+          A featherweight markdown editor with a real built-in terminal. Read your agents,
+          skills &amp; PRDs on one side, drive Claude Code on the other — splits, outline,
+          multi-session terminal, all in a ~5 MB app that sips RAM.
         </p>
         <div class="cta-row">
           <a class="btn btn-primary" href="#install">↓ Download for macOS</a>
@@ -208,32 +226,67 @@
       <div class="mock">
         <div class="mock-title">
           <span class="lights"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span>
-          <img src="logo.png" alt="" style="width:15px;height:15px;border-radius:4px;vertical-align:-3px;margin-right:5px" />Playdown — rfc.md
+          <img src="logo.png" alt="" style="width:15px;height:15px;border-radius:4px;vertical-align:-3px;margin-right:5px" />Playdown — full-stack-engineer.md
+        </div>
+        <div class="mock-tabs">
+          <span class="mtab">rfc.md</span>
+          <span class="mtab">prd-reviewer.md</span>
+          <span class="mtab on">full-stack-engineer.md</span>
         </div>
         <div class="mock-body">
           <div class="mock-side">
             <div class="h">Outline</div>
-            <div class="row">Summary</div>
-            <div class="row">Architecture</div>
-            <div class="row">API Spec</div>
-            <div class="row">Pseudo-Code</div>
+            <div class="row">Inputs</div>
+            <div class="row">Modes</div>
+            <div class="row">Core rules</div>
+            <div class="row">Done means</div>
           </div>
           <div class="mock-main">
-            <h2>RFC — Procurement Notification</h2>
-            <p><span class="tag">type:</span> rfc &nbsp; <span class="tag">status:</span> approved</p>
-            <p>Add transactional <code>email</code> notifications across the eProc domains.</p>
-            <p>☑ Folder tree &nbsp; ☑ Split panes &nbsp; ☐ Ship it</p>
-            <p><code>pnpm tauri build</code></p>
+            <div class="fmcard">
+              <div><span class="k">name</span> full-stack-engineer</div>
+              <div><span class="k">tools</span> Read, Grep, Write, Edit, Bash</div>
+              <div><span class="k">model</span> opus</div>
+            </div>
+            <p>You are the senior full-stack engineer for the delivery pipeline.</p>
+            <p>Implement <code>rfc.md</code>; satisfy the ACs in <code>prd-refined.md</code>.</p>
           </div>
           <div class="mock-side r">
-            <div class="h">Files</div>
-            <div class="row">.claude</div>
-            <div class="row on">rfc.md</div>
-            <div class="row">prd.md</div>
-            <div class="row">spec.json</div>
+            <div class="h">.agents</div>
+            <div class="row">code-reviewer.md</div>
+            <div class="row on">full-stack-engineer.md</div>
+            <div class="row">qa-engineer.md</div>
+            <div class="row">rfc-author.md</div>
+          </div>
+        </div>
+        <div class="mock-term">
+          <div class="mterm-head">Terminal <span class="mtt on">1: zsh</span><span class="mtt">2: zsh</span></div>
+          <div class="mterm-body">
+            <div class="tcol">
+              <div class="tline"><span class="g">✻</span> Claude Code v2.1 — Welcome back, zico!</div>
+              <div class="tline dim">&gt; implement the RFC acceptance criteria</div>
+              <div class="tline"><span class="o">●</span> Reading rfc.md, prd-refined.md…</div>
+              <div class="tline"><span class="o">●</span> Editing src/notify/email.ts <span class="g">+84</span> <span class="r">−12</span></div>
+              <div class="tline"><span class="g">✓</span> 3 ACs satisfied · tests green</div>
+              <div class="tline"><span class="o">outlander</span> <span class="dim">(Opus 4.8)</span> ▸▸ bypass on</div>
+              <div class="tline">$ <span class="cursor">▍</span></div>
+            </div>
+            <div class="tcol">
+              <div class="tline dim">$ git status</div>
+              <div class="tline"><span class="o">M</span> src/notify/email.ts</div>
+              <div class="tline"><span class="o">M</span> docs/rfc.md</div>
+              <div class="tline dim">$ pnpm test</div>
+              <div class="tline"><span class="g">✓</span> 42 passed (1.2s)</div>
+              <div class="tline dim">$ ls</div>
+              <div class="tline"><span class="b">.claude/</span> <span class="b">src/</span> <span class="b">docs/</span> CLAUDE.md</div>
+              <div class="tline">$ <span class="cursor">▍</span></div>
+            </div>
           </div>
         </div>
       </div>
+      <p class="mock-cap">
+        Read your agents, skills &amp; PRDs on one side — drive <b>Claude Code</b> in the
+        built-in terminal on the other. One calm <b>~5 MB</b> home base for agentic-AI work.
+      </p>
     </div>
 
     <section class="block" id="features">

@@ -3,6 +3,7 @@
   import { groups } from "../stores/groups.svelte";
   import { ui } from "../stores/ui.svelte";
   import { nodeMenuItems, moveEntry, importExternalFiles } from "../fileActions";
+  import { iconFor } from "../fileIcons";
   import Self from "./FileTree.svelte";
 
   let { nodes, depth }: { nodes: FileNode[]; depth: number } = $props();
@@ -65,6 +66,21 @@
   }
 </script>
 
+{#snippet ficon(name: string, isDir: boolean)}
+  {@const ic = iconFor(name, isDir)}
+  <svg
+    class="fticon"
+    viewBox="0 0 24 24"
+    width="15"
+    height="15"
+    fill={ic.fill ? ic.color : "none"}
+    stroke={ic.fill ? "none" : ic.color}
+    stroke-width="1.9"
+    stroke-linecap="round"
+    stroke-linejoin="round">{@html ic.paths}</svg
+  >
+{/snippet}
+
 <ul class="filetree" class:nested={depth > 0}>
   {#each nodes as node (node.path)}
     <li>
@@ -86,6 +102,7 @@
           oncontextmenu={(e) => onContext(e, node)}
         >
           <span class="caret">{expanded[node.path] ? "▾" : "▸"}</span>
+          {@render ficon(node.name, true)}
           <span class="label">{node.name}</span>
         </button>
         {#if expanded[node.path] && node.children}
@@ -106,6 +123,7 @@
           oncontextmenu={(e) => onContext(e, node)}
         >
           <span class="caret-spacer"></span>
+          {@render ficon(node.name, false)}
           <span class="label">{node.name}</span>
         </button>
       {/if}

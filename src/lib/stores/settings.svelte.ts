@@ -1,8 +1,30 @@
 import { LazyStore } from "@tauri-apps/plugin-store";
+import { getCurrentWindow } from "@tauri-apps/api/window";
 import type { Theme, Side, TitlebarColor, Dock } from "../types";
 import type { SessionState } from "./groups.svelte";
 
 const store = new LazyStore("settings.json");
+
+// Per-window settings: each window (project) keeps its own folder, session, and
+// titlebar color. The default "main" window uses the bare keys (back-compat);
+// secondary windows suffix them so windows don't clobber each other. Everything
+// else (theme, keymap, zoom, …) stays shared across windows.
+let winLabel: string | null = null;
+function windowLabel(): string {
+  if (winLabel === null) {
+    try {
+      winLabel = getCurrentWindow().label;
+    } catch {
+      winLabel = "main";
+    }
+  }
+  return winLabel;
+}
+const PER_WINDOW = new Set(["titlebarColor", "lastFolder", "session"]);
+function storeKey(key: string): string {
+  const w = windowLabel();
+  return PER_WINDOW.has(key) && w !== "main" ? `${key}__${w}` : key;
+}
 
 /** Title bar palette → [background, foreground]. "plain" follows the theme. */
 export const TITLEBAR_COLORS: Record<TitlebarColor, [string, string]> = {
@@ -33,14 +55,14 @@ class Settings {
   async load() {
     try {
       const theme = await store.get<Theme>("theme");
-      const lastFolder = await store.get<string>("lastFolder");
-      const session = await store.get<SessionState>("session");
+      const lastFolder = await store.get<string>(storeKey("lastFolder"));
+      const session = await store.get<SessionState>(storeKey("session"));
       const sidebarSide = await store.get<Side>("sidebarSide");
       const sidebarVisible = await store.get<boolean>("sidebarVisible");
       const outlineVisible = await store.get<boolean>("outlineVisible");
       const zoom = await store.get<number>("zoom");
       const keymap = await store.get<Record<string, string>>("keymap");
-      const titlebarColor = await store.get<TitlebarColor>("titlebarColor");
+      const titlebarColor = await store.get<TitlebarColor>(storeKey("titlebarColor"));
       const terminalHeight = await store.get<number>("terminalHeight");
       const terminalWidth = await store.get<number>("terminalWidth");
       const terminalSide = await store.get<Dock>("terminalSide");
@@ -169,7 +191,7 @@ class Settings {
 
   private async persist(key: string, value: unknown) {
     try {
-      await store.set(key, value);
+      await store.set(storeKey(key), value);
       await store.save();
     } catch (e) {
       console.error("Failed to persist setting:", key, e);
