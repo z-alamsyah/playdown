@@ -238,11 +238,12 @@ fn open_new_window(app: &tauri::AppHandle) -> Result<(), String> {
             .title("Playdown")
             .inner_size(1100.0, 720.0)
             .min_inner_size(600.0, 400.0)
-            .hidden_title(true)
             .disable_drag_drop_handler();
     #[cfg(target_os = "macos")]
     {
-        builder = builder.title_bar_style(tauri::TitleBarStyle::Overlay);
+        builder = builder
+            .hidden_title(true)
+            .title_bar_style(tauri::TitleBarStyle::Overlay);
     }
     builder.build().map_err(|e| e.to_string())?;
     Ok(())
