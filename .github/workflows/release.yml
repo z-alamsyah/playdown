@@ -1,6 +1,7 @@
 name: Release
 
-# Build & publish desktop bundles when a version tag is pushed.
+# Build & publish desktop bundles when a version tag (vX.Y.Z) is pushed:
+#   git tag v0.6.1 && git push origin v0.6.1
 on:
   push:
     tags:
@@ -70,3 +71,16 @@ jobs:
           releaseDraft: true
           prerelease: false
           args: ${{ matrix.args }}
+
+  # Flip the draft to a published "latest" release only after every platform
+  # has finished uploading, so `releases/latest` never serves a partial set.
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release edit "${{ github.ref_name }}" --repo "${{ github.repository }}" --draft=false --latest
