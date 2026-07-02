@@ -14,6 +14,12 @@ class TerminalStore {
   sessions = $state<TermSession[]>([]);
   activeId = $state<string | null>(null);
   shellName = $state("shell");
+  /** Bumped to ask the active <TerminalView> to grab keyboard focus. */
+  focusSeq = $state(0);
+
+  requestFocus() {
+    this.focusSeq++;
+  }
 
   get active(): TermSession | null {
     return this.sessions.find((s) => s.id === this.activeId) ?? null;

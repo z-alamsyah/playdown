@@ -3,13 +3,11 @@
   import { workspace } from "../stores/workspace.svelte";
   import { settings } from "../stores/settings.svelte";
   import { ui } from "../stores/ui.svelte";
-  import { promptNewEntry, promptRename, selectedDir, moveEntry, importExternalFiles, closeFolder } from "../fileActions";
+  import { promptNewEntry, promptRename, selectedDir, moveEntry, closeFolder } from "../fileActions";
   import FileTree from "./FileTree.svelte";
+  import { drag } from "../stores/drag.svelte";
 
   let { side }: { side: Side } = $props();
-
-  let rootDragOver = $state(false);
-  const MIME = "application/x-playdown-move";
 
   function onKey(e: KeyboardEvent) {
     // Enter on a selected node → rename (prevent the row button's activation).
@@ -19,26 +17,12 @@
     }
   }
 
-  function onTreeOver(e: DragEvent) {
-    if (!workspace.root) return;
-    const types = Array.from(e.dataTransfer?.types ?? []);
-    if (!types.includes(MIME) && !types.includes("Files")) return;
-    e.preventDefault();
-    rootDragOver = true;
-  }
-
-  function onTreeDrop(e: DragEvent) {
-    rootDragOver = false;
-    if (!workspace.root) return;
-    // External files from Finder/Explorer → copy into the workspace root.
-    const files = e.dataTransfer?.files;
-    if (files && files.length) {
-      e.preventDefault();
-      void importExternalFiles(files, workspace.root);
-      return;
+  // Drop a dragged node on empty tree space → move it to the workspace root.
+  // (Folder rows stop propagation, so this only fires outside a folder.)
+  function onTreeUp() {
+    if (drag.data?.kind === "node" && workspace.root) {
+      void moveEntry(drag.data.path, workspace.root);
     }
-    const src = e.dataTransfer?.getData(MIME);
-    if (src) void moveEntry(src, workspace.root);
   }
 </script>
 
@@ -77,13 +61,7 @@
   </div>
 
   <!-- svelte-ignore a11y_no_static_element_interactions -->
-  <div
-    class="tree"
-    class:root-drop={rootDragOver}
-    ondragover={onTreeOver}
-    ondragleave={() => (rootDragOver = false)}
-    ondrop={onTreeDrop}
-  >
+  <div class="tree" onpointerup={onTreeUp}>
     {#if workspace.loading}
       <div class="muted">Loading…</div>
     {:else if !workspace.root}

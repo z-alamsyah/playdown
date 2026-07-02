@@ -4,6 +4,7 @@
   import { listen, type UnlistenFn } from "@tauri-apps/api/event";
   import { workspace } from "../stores/workspace.svelte";
   import { settings } from "../stores/settings.svelte";
+  import { terminal } from "../stores/terminal.svelte";
 
   let { id, active }: { id: string; active: boolean } = $props();
 
@@ -168,6 +169,12 @@
         term?.focus();
       });
     }
+  });
+
+  // Grab keyboard focus when the app asks (⌘J focus-switch).
+  $effect(() => {
+    terminal.focusSeq;
+    if (active && ready) term?.focus();
   });
 
   // On app zoom, counter it via font size so the column count stays put

@@ -6,6 +6,7 @@
   import PreviewPane from "./PreviewPane.svelte";
   import ImagePane from "./ImagePane.svelte";
   import { fileKind } from "../fileKind";
+  import { drag } from "../stores/drag.svelte";
 
   let { group }: { group: EditorGroup } = $props();
 
@@ -17,7 +18,7 @@
   );
   const kind = $derived(activeTab ? fileKind(activeTab.path) : "text");
 
-  function computeEdge(e: DragEvent): DropEdge {
+  function computeEdge(e: PointerEvent): DropEdge {
     const r = paneEl.getBoundingClientRect();
     const x = (e.clientX - r.left) / r.width;
     const y = (e.clientY - r.top) / r.height;
@@ -29,38 +30,21 @@
     return "center";
   }
 
-  function isTabDrag(e: DragEvent): boolean {
-    return Array.from(e.dataTransfer?.types ?? []).includes(
-      "application/x-playdown-tab",
-    );
-  }
-
-  function onDragOver(e: DragEvent) {
-    if (!isTabDrag(e)) return;
-    e.preventDefault();
-    if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
+  function onPaneMove(e: PointerEvent) {
+    if (drag.data?.kind !== "tab") return;
     dropEdge = computeEdge(e);
   }
 
-  function onDragLeave(e: DragEvent) {
-    // Ignore leaves that bubble from children still inside the pane.
-    if (paneEl.contains(e.relatedTarget as Node)) return;
+  function onPaneLeave() {
     dropEdge = null;
   }
 
-  function onDrop(e: DragEvent) {
-    if (!isTabDrag(e)) return;
-    e.preventDefault();
-    const data = e.dataTransfer?.getData("application/x-playdown-tab");
+  function onPaneUp(e: PointerEvent) {
+    if (drag.data?.kind !== "tab") return;
+    const { groupId, index } = drag.data;
     const edge = computeEdge(e);
     dropEdge = null;
-    if (!data) return;
-    try {
-      const { groupId, index } = JSON.parse(data);
-      groups.splitWithTab(groupId, index, group.id, edge);
-    } catch {
-      /* malformed payload */
-    }
+    groups.splitWithTab(groupId, index, group.id, edge);
   }
 
   function toggleView() {
@@ -99,9 +83,9 @@
     class="group-pane"
     bind:this={paneEl}
     role="group"
-    ondragover={onDragOver}
-    ondragleave={onDragLeave}
-    ondrop={onDrop}
+    onpointermove={onPaneMove}
+    onpointerleave={onPaneLeave}
+    onpointerup={onPaneUp}
   >
     {#if activeTab}
       {#key activeTab.path + "::" + group.viewMode}

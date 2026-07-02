@@ -99,7 +99,8 @@ export function createEditor(opts: EditorOptions): EditorView {
       search({ top: true }),
       appKeymap,
       keymap.of([
-        ...searchKeymap,
+        // ⌘G / Ctrl+G is our "go to line"; drop CodeMirror's find-next on it.
+        ...searchKeymap.filter((b) => b.key !== "Mod-g"),
         ...defaultKeymap,
         ...historyKeymap,
         ...foldKeymap,

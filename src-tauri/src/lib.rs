@@ -3,11 +3,18 @@ mod terminal;
 use serde::Serialize;
 use std::fs;
 use std::path::{Path, PathBuf};
+use notify::{EventKind, RecursiveMode, Watcher};
 use std::sync::atomic::{AtomicU32, Ordering};
+use std::sync::Mutex;
 use tauri::{Emitter, Manager};
 
 /// Monotonic counter for unique secondary-window labels (win-1, win-2, …).
 static WIN_SEQ: AtomicU32 = AtomicU32::new(1);
+
+/// Holds the active recursive filesystem watcher; replaced (old one dropped →
+/// its thread stops) each time the workspace root changes.
+#[derive(Default)]
+struct FsWatcher(Mutex<Option<notify::RecommendedWatcher>>);
 
 /// The folder path passed on the command line at launch (`playdown <path>`).
 struct LaunchPath(Option<String>);
@@ -227,6 +234,41 @@ fn get_launch_path(state: tauri::State<LaunchPath>) -> Option<String> {
     state.0.clone()
 }
 
+/// Watch `path` recursively; emit `fs-change` with the affected paths when
+/// files are modified/created/removed (so open docs auto-reload + the tree
+/// refreshes). Replaces any previous watcher.
+#[tauri::command]
+fn watch_dir(
+    app: tauri::AppHandle,
+    state: tauri::State<FsWatcher>,
+    path: String,
+) -> Result<(), String> {
+    let app2 = app.clone();
+    let mut watcher = notify::recommended_watcher(move |res: notify::Result<notify::Event>| {
+        if let Ok(ev) = res {
+            if matches!(
+                ev.kind,
+                EventKind::Modify(_) | EventKind::Create(_) | EventKind::Remove(_)
+            ) {
+                let paths: Vec<String> = ev
+                    .paths
+                    .iter()
+                    .map(|p| p.to_string_lossy().into_owned())
+                    .collect();
+                if !paths.is_empty() {
+                    let _ = app2.emit("fs-change", paths);
+                }
+            }
+        }
+    })
+    .map_err(|e| e.to_string())?;
+    watcher
+        .watch(Path::new(&path), RecursiveMode::Recursive)
+        .map_err(|e| e.to_string())?;
+    *state.0.lock().unwrap() = Some(watcher);
+    Ok(())
+}
+
 /// Open a new, independent Playdown window (its own webview → its own project,
 /// tabs, terminal, and per-window settings). Shared by the command + File menu.
 fn open_new_window(app: &tauri::AppHandle) -> Result<(), String> {
@@ -237,8 +279,7 @@ fn open_new_window(app: &tauri::AppHandle) -> Result<(), String> {
         tauri::WebviewWindowBuilder::new(app, &label, tauri::WebviewUrl::App("index.html".into()))
             .title("Playdown")
             .inner_size(1100.0, 720.0)
-            .min_inner_size(600.0, 400.0)
-            .disable_drag_drop_handler();
+            .min_inner_size(600.0, 400.0);
     #[cfg(target_os = "macos")]
     {
         builder = builder
@@ -252,6 +293,43 @@ fn open_new_window(app: &tauri::AppHandle) -> Result<(), String> {
 #[tauri::command]
 fn new_window(app: tauri::AppHandle) -> Result<(), String> {
     open_new_window(&app)
+}
+
+/// Copy an external file (dragged from Finder/Explorer) into `dir`,
+/// auto-suffixing the name on collision. Returns the new path.
+#[tauri::command]
+fn copy_into(src: String, dir: String) -> Result<String, String> {
+    let src_p = Path::new(&src);
+    let name = src_p
+        .file_name()
+        .and_then(|n| n.to_str())
+        .ok_or_else(|| "Invalid source name".to_string())?;
+    let dir_p = Path::new(&dir);
+    if !dir_p.is_dir() {
+        return Err(format!("Not a directory: {dir}"));
+    }
+    let dest = unique_path(dir_p, name);
+    fs::copy(src_p, &dest).map_err(|e| e.to_string())?;
+    Ok(dest.to_string_lossy().into_owned())
+}
+
+/// Open a file (e.g. .html) in the OS default handler — a browser for HTML.
+/// Uses `.status()` so the launcher child is reaped (no zombie process).
+#[tauri::command]
+fn open_in_browser(path: String) -> Result<(), String> {
+    #[cfg(target_os = "macos")]
+    let res = std::process::Command::new("open").arg(&path).status();
+    #[cfg(target_os = "windows")]
+    let res = std::process::Command::new("cmd")
+        .args(["/C", "start", "", &path])
+        .status();
+    #[cfg(all(unix, not(target_os = "macos")))]
+    let res = std::process::Command::new("xdg-open").arg(&path).status();
+    match res {
+        Ok(s) if s.success() => Ok(()),
+        Ok(s) => Err(format!("opener exited: {s}")),
+        Err(e) => Err(e.to_string()),
+    }
 }
 
 /// Build the app menu (File ▸ New Window) and wire its events.
@@ -372,6 +450,7 @@ pub fn run() {
         .plugin(tauri_plugin_clipboard_manager::init())
         .manage(launch)
         .manage(terminal::TerminalState::default())
+        .manage(FsWatcher::default())
         .setup(|app| {
             setup_menu(app)?;
             Ok(())
@@ -388,6 +467,9 @@ pub fn run() {
             rename_path,
             read_image_data_url,
             get_launch_path,
+            watch_dir,
+            copy_into,
+            open_in_browser,
             new_window,
             install_cli,
             terminal::default_shell,

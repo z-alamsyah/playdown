@@ -2,6 +2,7 @@
   import { onMount, onDestroy } from "svelte";
   import { invoke } from "@tauri-apps/api/core";
   import { listen } from "@tauri-apps/api/event";
+  import { getCurrentWebview } from "@tauri-apps/api/webview";
   import Sidebar from "./lib/components/Sidebar.svelte";
   import Outline from "./lib/components/Outline.svelte";
   import Layout from "./lib/components/Layout.svelte";
@@ -15,15 +16,20 @@
   import { workspace } from "./lib/stores/workspace.svelte";
   import { groups } from "./lib/stores/groups.svelte";
   import { terminal } from "./lib/stores/terminal.svelte";
+  import { drag } from "./lib/stores/drag.svelte";
   import { settings } from "./lib/stores/settings.svelte";
   import { keymap, IS_MAC, type Action } from "./lib/stores/keymap.svelte";
   import { ui } from "./lib/stores/ui.svelte";
   import { copyText } from "./lib/tauri/clipboard";
+  import { readFile } from "./lib/tauri/fs";
   import { applyZoom, zoomIn, zoomOut, zoomReset, zoomBy } from "./lib/tauri/zoom";
 
   let quickOpen = $state(false);
   let settingsOpen = $state(false);
   let unlistenCli: (() => void) | undefined;
+  let unlistenDrop: (() => void) | undefined;
+  let unlistenFs: (() => void) | undefined;
+  let fsRefreshTimer: ReturnType<typeof setTimeout> | undefined;
 
   // Mount the terminal lazily on first open, then keep it mounted (just
   // hidden) so toggling the panel never kills running shell sessions.
@@ -63,11 +69,60 @@
       if (e.payload) void workspace.setRoot(e.payload);
     });
 
+    // Drag from Finder/Explorer: a folder opens as the workspace; a file dropped
+    // onto a sidebar folder is copied in, otherwise it opens as a tab.
+    unlistenDrop = await getCurrentWebview().onDragDropEvent(async (e) => {
+      if (e.payload.type !== "drop") return;
+      const pos = e.payload.position;
+      const dpr = window.devicePixelRatio || 1;
+      const el = pos ? document.elementFromPoint(pos.x / dpr, pos.y / dpr) : null;
+      const targetDir =
+        el?.closest<HTMLElement>(".row.dir[data-path]")?.dataset.path ?? null;
+      let openedFolder = false;
+      let imported = false;
+      for (const p of e.payload.paths) {
+        try {
+          if (await invoke<boolean>("is_dir", { path: p })) {
+            if (!openedFolder) {
+              await workspace.setRoot(p);
+              openedFolder = true;
+            }
+          } else if (targetDir) {
+            await invoke("copy_into", { src: p, dir: targetDir });
+            imported = true;
+          } else {
+            await groups.openFile(p);
+          }
+        } catch (err) {
+          console.error("drop handling failed:", p, err);
+        }
+      }
+      if (imported) void workspace.refresh();
+    });
+
+    // Auto-reload files edited on disk (e.g. by an AI agent) + refresh the tree.
+    unlistenFs = await listen<string[]>("fs-change", async (e) => {
+      for (const p of e.payload ?? []) {
+        if (groups.documents[p] && !groups.isDirtyPath(p)) {
+          try {
+            groups.reloadExternal(p, await readFile(p));
+          } catch {
+            /* file vanished — tree refresh below handles it */
+          }
+        }
+      }
+      clearTimeout(fsRefreshTimer);
+      fsRefreshTimer = setTimeout(() => void workspace.refresh(), 150);
+    });
+
     window.addEventListener("wheel", onWheel, { passive: false });
   });
 
   onDestroy(() => {
     unlistenCli?.();
+    unlistenDrop?.();
+    unlistenFs?.();
+    clearTimeout(fsRefreshTimer);
     window.removeEventListener("wheel", onWheel);
   });
 
@@ -94,6 +149,7 @@
       case "openFolder": void workspace.openFolder(); break;
       case "quickOpen": quickOpen = true; break;
       case "save": void groups.saveActive(); break;
+      case "gotoLine": groups.gotoLine(); break;
       case "toggleView": groups.toggleViewActive(); break;
       case "toggleSidebar": settings.toggleSidebar(); break;
       case "toggleOutline": settings.toggleOutline(); break;
@@ -107,6 +163,14 @@
       case "zoomReset": zoomReset(); break;
       case "formatDoc": groups.formatActive(); break;
       case "toggleTerminal": settings.toggleTerminal(); break;
+      case "focusTerminal":
+        if (terminalFocused()) {
+          groups.focusActiveEditor();
+        } else {
+          if (!settings.terminalOpen) settings.setTerminalOpen(true);
+          terminal.requestFocus();
+        }
+        break;
       case "newTerminal":
         if (!settings.terminalOpen) settings.setTerminalOpen(true);
         terminal.create();
@@ -195,6 +259,10 @@
 
 <ContextMenu />
 <PromptModal />
+
+{#if drag.data}
+  <div class="drag-ghost" style="left: {drag.x}px; top: {drag.y}px">{drag.data.label}</div>
+{/if}
 
 {#snippet mainArea()}
   <main class="main">

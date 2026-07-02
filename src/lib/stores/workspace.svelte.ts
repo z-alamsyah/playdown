@@ -1,6 +1,6 @@
 import { open } from "@tauri-apps/plugin-dialog";
 import type { FileNode, FlatFile } from "../types";
-import { listDirTree, createFile, createDir } from "../tauri/fs";
+import { listDirTree, createFile, createDir, watchDir } from "../tauri/fs";
 import { settings } from "./settings.svelte";
 
 /** Holds the currently opened folder and its markdown file tree. */
@@ -42,6 +42,7 @@ class Workspace {
     try {
       this.tree = await listDirTree(path);
       await settings.setLastFolder(path);
+      void watchDir(path).catch(() => {}); // auto-reload open files on external edits
     } catch (e) {
       console.error("Failed to list directory:", e);
       this.tree = [];

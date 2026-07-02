@@ -4,6 +4,7 @@ export type Action =
   | "openFolder"
   | "quickOpen"
   | "save"
+  | "gotoLine"
   | "toggleView"
   | "toggleSidebar"
   | "toggleOutline"
@@ -24,6 +25,7 @@ export type Action =
   | "nextTerminal"
   | "prevTerminal"
   | "closeTerminal"
+  | "focusTerminal"
   | "openSettings";
 
 export interface ActionDef {
@@ -35,6 +37,7 @@ export const ACTIONS: ActionDef[] = [
   { id: "openFolder", label: "Open folder" },
   { id: "quickOpen", label: "Quick open (find file)" },
   { id: "save", label: "Save file" },
+  { id: "gotoLine", label: "Go to line" },
   { id: "toggleView", label: "Toggle edit / preview" },
   { id: "toggleSidebar", label: "Toggle sidebar" },
   { id: "toggleOutline", label: "Toggle outline" },
@@ -55,6 +58,7 @@ export const ACTIONS: ActionDef[] = [
   { id: "nextTerminal", label: "Next terminal session" },
   { id: "prevTerminal", label: "Previous terminal session" },
   { id: "closeTerminal", label: "Close terminal session" },
+  { id: "focusTerminal", label: "Focus terminal / editor" },
   { id: "openSettings", label: "Open settings" },
 ];
 
@@ -62,6 +66,7 @@ const DEFAULTS: Record<Action, string> = {
   openFolder: "Mod+O",
   quickOpen: "Mod+P",
   save: "Mod+S",
+  gotoLine: "Mod+G",
   toggleView: "Mod+E",
   toggleSidebar: "Mod+B",
   toggleOutline: "Mod+Shift+O",
@@ -82,6 +87,7 @@ const DEFAULTS: Record<Action, string> = {
   nextTerminal: "Mod+Alt+ArrowDown",
   prevTerminal: "Mod+Alt+ArrowUp",
   closeTerminal: "Mod+X",
+  focusTerminal: "Mod+J",
   openSettings: "Mod+,",
 };
 

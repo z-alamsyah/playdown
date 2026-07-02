@@ -323,6 +323,24 @@ button {
 .fticon {
   flex-shrink: 0;
 }
+/* Floating label that follows the cursor during an in-app drag. */
+.drag-ghost {
+  position: fixed;
+  z-index: 9999;
+  transform: translate(12px, 10px);
+  padding: 3px 9px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 6px;
+  pointer-events: none;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 
 /* ============================================================
    Tab bar

@@ -2,6 +2,7 @@
   import type { EditorGroup } from "../types";
   import { groups } from "../stores/groups.svelte";
   import { ui } from "../stores/ui.svelte";
+  import { draggable } from "../actions/dnd";
 
   let { group }: { group: EditorGroup } = $props();
 
@@ -23,13 +24,6 @@
     return tab.path.split(/[/\\]/).filter(Boolean).slice(-2, -1)[0] ?? "";
   }
 
-  function onDragStart(e: DragEvent, index: number) {
-    e.dataTransfer?.setData(
-      "application/x-playdown-tab",
-      JSON.stringify({ groupId: group.id, index }),
-    );
-    if (e.dataTransfer) e.dataTransfer.effectAllowed = "move";
-  }
 </script>
 
 <div class="tabbar">
@@ -40,9 +34,8 @@
       class:current={i === group.activeIndex && group.id === groups.activeGroupId}
       role="button"
       tabindex="0"
-      draggable="true"
       title={tab.path}
-      ondragstart={(e) => onDragStart(e, i)}
+      use:draggable={() => ({ kind: "tab", groupId: group.id, index: i, label: tab.name })}
       onclick={() => groups.setActiveTab(group.id, i)}
       onkeydown={(e) => e.key === "Enter" && groups.setActiveTab(group.id, i)}
       oncontextmenu={(e) => onTabContext(e, i)}

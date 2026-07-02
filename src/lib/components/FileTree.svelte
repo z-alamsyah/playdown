@@ -2,16 +2,17 @@
   import type { FileNode } from "../types";
   import { groups } from "../stores/groups.svelte";
   import { ui } from "../stores/ui.svelte";
-  import { nodeMenuItems, moveEntry, importExternalFiles } from "../fileActions";
+  import { nodeMenuItems, moveEntry, openInBrowser } from "../fileActions";
   import { iconFor } from "../fileIcons";
+  import { isHtml } from "../fileKind";
+  import { draggable } from "../actions/dnd";
+  import { drag } from "../stores/drag.svelte";
   import Self from "./FileTree.svelte";
 
   let { nodes, depth }: { nodes: FileNode[]; depth: number } = $props();
 
   let expanded = $state<Record<string, boolean>>({});
   let dragOver = $state<string | null>(null);
-
-  const MIME = "application/x-playdown-move";
 
   function toggle(path: string) {
     expanded[path] = !expanded[path];
@@ -24,45 +25,20 @@
     ui.showMenu(e.clientX, e.clientY, nodeMenuItems(node));
   }
 
-  function onDragStart(e: DragEvent, node: FileNode) {
-    e.stopPropagation();
-    e.dataTransfer?.setData(MIME, node.path);
-    if (e.dataTransfer) e.dataTransfer.effectAllowed = "move";
+  // Pointer-based move: highlight a folder while a node is dragged over it;
+  // dropping moves the dragged file/folder into it.
+  function onDirEnter(node: FileNode) {
+    if (drag.data?.kind === "node" && drag.data.path !== node.path) dragOver = node.path;
   }
-
-  function isMove(e: DragEvent) {
-    return Array.from(e.dataTransfer?.types ?? []).includes(MIME);
+  function onDirLeave(node: FileNode) {
+    if (dragOver === node.path) dragOver = null;
   }
-
-  // External files dragged from Finder / Explorer carry the "Files" type.
-  function hasFiles(e: DragEvent) {
-    return Array.from(e.dataTransfer?.types ?? []).includes("Files");
-  }
-
-  function onDirOver(e: DragEvent, node: FileNode) {
-    const external = hasFiles(e);
-    if (!isMove(e) && !external) return;
-    e.preventDefault();
-    e.stopPropagation();
-    if (e.dataTransfer) e.dataTransfer.dropEffect = external ? "copy" : "move";
-    dragOver = node.path;
-  }
-
-  function onDirDrop(e: DragEvent, node: FileNode) {
-    const files = e.dataTransfer?.files;
-    if (files && files.length) {
-      e.preventDefault();
-      e.stopPropagation();
-      dragOver = null;
-      void importExternalFiles(files, node.path);
-      return;
-    }
-    if (!isMove(e)) return;
-    e.preventDefault();
-    e.stopPropagation();
-    const src = e.dataTransfer?.getData(MIME);
+  function onDirUp(e: PointerEvent, node: FileNode) {
+    if (drag.data?.kind !== "node") return;
+    e.stopPropagation(); // don't also fall through to the root-drop container
+    const src = drag.data.path;
     dragOver = null;
-    if (src) void moveEntry(src, node.path);
+    if (src !== node.path) void moveEntry(src, node.path);
   }
 </script>
 
@@ -89,11 +65,11 @@
           class="row dir"
           class:selected={ui.selectedPath === node.path}
           class:drop-target={dragOver === node.path}
-          draggable="true"
-          ondragstart={(e) => onDragStart(e, node)}
-          ondragover={(e) => onDirOver(e, node)}
-          ondragleave={() => (dragOver = null)}
-          ondrop={(e) => onDirDrop(e, node)}
+          data-path={node.path}
+          use:draggable={() => ({ kind: "node", path: node.path, label: node.name })}
+          onpointerenter={() => onDirEnter(node)}
+          onpointerleave={() => onDirLeave(node)}
+          onpointerup={(e) => onDirUp(e, node)}
           onclick={(e) => {
             ui.select(node.path, true);
             (e.currentTarget as HTMLElement).focus();
@@ -113,13 +89,13 @@
           class="row file"
           class:active={groups.activeTab?.path === node.path}
           class:selected={ui.selectedPath === node.path}
-          draggable="true"
-          ondragstart={(e) => onDragStart(e, node)}
+          use:draggable={() => ({ kind: "node", path: node.path, label: node.name })}
           onclick={(e) => {
             ui.select(node.path, false);
             (e.currentTarget as HTMLElement).focus();
             groups.openFile(node.path, node.name);
           }}
+          ondblclick={() => isHtml(node.path) && openInBrowser(node.path)}
           oncontextmenu={(e) => onContext(e, node)}
         >
           <span class="caret-spacer"></span>

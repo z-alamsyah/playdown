@@ -4,6 +4,8 @@ import { workspace } from "./stores/workspace.svelte";
 import { groups } from "./stores/groups.svelte";
 import { copyText } from "./tauri/clipboard";
 import { deletePath, renamePath, importFile } from "./tauri/fs";
+import { invoke } from "@tauri-apps/api/core";
+import { isHtml } from "./fileKind";
 import type { FileNode } from "./types";
 
 export function parentDir(p: string): string {
@@ -131,10 +133,17 @@ export async function deleteEntry(node: FileNode) {
   }
 }
 
+/** Open a file in the OS default browser (used for .html). */
+export function openInBrowser(path: string) {
+  void invoke("open_in_browser", { path }).catch((e) =>
+    console.error("Open in browser failed:", e),
+  );
+}
+
 /** Right-click menu items for a file-tree node. */
 export function nodeMenuItems(node: FileNode): MenuItem[] {
   const dir = node.is_dir ? node.path : parentDir(node.path);
-  return [
+  const items: MenuItem[] = [
     { label: "Copy Path", action: () => void copyText(node.path) },
     { label: "Copy Relative Path", action: () => void copyText(workspace.relativeOf(node.path)) },
     { label: "Rename…", separator: true, action: () => promptRename(node.path) },
@@ -142,4 +151,8 @@ export function nodeMenuItems(node: FileNode): MenuItem[] {
     { label: "New Folder…", action: () => promptNewEntry(dir, true) },
     { label: "Delete", danger: true, separator: true, action: () => void deleteEntry(node) },
   ];
+  if (!node.is_dir && isHtml(node.path)) {
+    items.unshift({ label: "Open in Browser", action: () => openInBrowser(node.path) });
+  }
+  return items;
 }

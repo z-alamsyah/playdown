@@ -36,3 +36,6 @@ export const readImageDataUrl = (path: string) =>
  *  the name on collision. Returns the written path. */
 export const importFile = (dir: string, name: string, dataBase64: string) =>
   invoke<string>("import_file", { dir, name, dataBase64 });
+
+/** Watch a folder recursively; the backend emits `fs-change` on edits. */
+export const watchDir = (path: string) => invoke<void>("watch_dir", { path });

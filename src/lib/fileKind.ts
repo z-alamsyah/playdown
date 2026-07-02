@@ -11,3 +11,4 @@ export function fileKind(path: string): FileKind {
 }
 
 export const isImage = (path: string) => IMAGE_RE.test(path);
+export const isHtml = (path: string) => /\.html?$/i.test(path);

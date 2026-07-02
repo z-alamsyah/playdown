@@ -8,7 +8,7 @@ import type {
   DropEdge,
 } from "../types";
 import { EditorView } from "@codemirror/view";
-import { openSearchPanel } from "@codemirror/search";
+import { openSearchPanel, gotoLine } from "@codemirror/search";
 import { readFile, writeFile } from "../tauri/fs";
 import type { Heading } from "../markdown/render";
 import { fileKind, isImage } from "../fileKind";
@@ -93,6 +93,22 @@ class GroupsStore {
   saveActive() {
     const t = this.activeTab;
     if (t) return this.saveDoc(t.path);
+  }
+
+  /** Replace a doc's content after an external change on disk (e.g. an AI
+   *  agent edited the file) and push it into any editor showing it. No-op if
+   *  the doc has unsaved local edits (never clobber the user). */
+  reloadExternal(path: string, content: string) {
+    const doc = this.documents[path];
+    if (!doc || doc.content !== doc.saved || doc.content === content) return;
+    doc.content = content;
+    doc.saved = content;
+    for (const g of this.groups) {
+      if (this.groupActiveTab(g)?.path === path) {
+        const view = this.editors.get(g.id);
+        view?.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: content } });
+      }
+    }
   }
 
   private async ensureDoc(path: string) {
@@ -183,6 +199,23 @@ class GroupsStore {
     if (!view) return false;
     view.focus();
     openSearchPanel(view);
+    return true;
+  }
+
+  /** Focus the active group's editor (for keyboard focus-switching). */
+  focusActiveEditor() {
+    const g = this.activeGroup;
+    if (g) this.editors.get(g.id)?.focus();
+  }
+
+  /** Focus the active editor and open the go-to-line prompt. */
+  gotoLine(): boolean {
+    const g = this.activeGroup;
+    if (!g || g.viewMode !== "edit") return false;
+    const view = this.editors.get(g.id);
+    if (!view) return false;
+    view.focus();
+    gotoLine(view);
     return true;
   }
 
