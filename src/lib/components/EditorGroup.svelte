@@ -7,6 +7,7 @@
   import ImagePane from "./ImagePane.svelte";
   import { fileKind } from "../fileKind";
   import { drag } from "../stores/drag.svelte";
+  import { annotations } from "../stores/annotations.svelte";
 
   let { group }: { group: EditorGroup } = $props();
 
@@ -56,6 +57,15 @@
     groups.setActiveGroup(group.id);
     groups.splitActive("right");
   }
+
+  function toggleAnnotate() {
+    groups.setActiveGroup(group.id);
+    annotations.enabled = !annotations.enabled;
+    // Annotating happens in the rendered view.
+    if (annotations.enabled && group.viewMode === "edit") {
+      groups.setViewMode(group.id, "preview");
+    }
+  }
 </script>
 
 <div
@@ -66,6 +76,19 @@
   <div class="group-header">
     <TabBar {group} />
     <div class="group-actions">
+      {#if kind === "markdown"}
+        <button
+          class="ann-toggle"
+          class:on={annotations.enabled}
+          title="Annotate mode (⌘⇧A)"
+          role="switch"
+          aria-checked={annotations.enabled}
+          onclick={toggleAnnotate}
+        >
+          <span class="ann-knob"></span>
+          <span class="ann-toggle-label">Annotate</span>
+        </button>
+      {/if}
       <button
         class="ghost-btn"
         title="Toggle edit / preview (⌘E)"

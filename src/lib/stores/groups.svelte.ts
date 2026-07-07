@@ -299,6 +299,54 @@ class GroupsStore {
     }
   }
 
+  /** Scroll the active group's view to a source line (annotation jump).
+   *  In preview, falls back to the nearest preceding block if the exact
+   *  line's block no longer exists (file changed since annotating). */
+  scrollToLine(line: number) {
+    const g = this.activeGroup;
+    if (!g) return;
+    if (g.viewMode === "edit") {
+      const view = this.editors.get(g.id);
+      if (!view) return;
+      const lineNo = Math.max(1, Math.min(line + 1, view.state.doc.lines));
+      const l = view.state.doc.line(lineNo);
+      view.dispatch({
+        selection: { anchor: l.from },
+        effects: EditorView.scrollIntoView(l.from, { y: "start" }),
+      });
+      view.focus();
+      return;
+    }
+    const el = this.previews.get(g.id);
+    if (!el) return;
+    let found = el.querySelector<HTMLElement>(`[data-line="${line}"]`);
+    if (!found) {
+      let bestLine = -1;
+      for (const n of el.querySelectorAll<HTMLElement>("[data-line]")) {
+        const ln = Number(n.dataset.line);
+        if (ln <= line && ln > bestLine) {
+          bestLine = ln;
+          found = n;
+        }
+      }
+    }
+    if (!found) return;
+    const target = found;
+    const scroller = target.closest<HTMLElement>(".preview");
+    if (scroller) {
+      const top =
+        target.getBoundingClientRect().top -
+        scroller.getBoundingClientRect().top +
+        scroller.scrollTop -
+        8;
+      scroller.scrollTo({ top, behavior: "smooth" });
+    } else {
+      target.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+    target.classList.add("ann-flash");
+    setTimeout(() => target.classList.remove("ann-flash"), 1200);
+  }
+
   // ---- view mode -----------------------------------------------------------
   setViewMode(groupId: string, mode: ViewMode) {
     const g = this.group(groupId);

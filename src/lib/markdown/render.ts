@@ -60,14 +60,25 @@ md.renderer.rules.heading_open = (tokens, idx, options, env, self) => {
   return self.renderToken(tokens, idx, options);
 };
 
+// Tag block elements with their source line so annotate mode can anchor
+// clicks (and jumps) back to the markdown source.
+md.core.ruler.push("source_lines", (state) => {
+  for (const t of state.tokens) {
+    if (t.nesting === 1 && t.map) t.attrSet("data-line", String(t.map[0]));
+  }
+});
+
 // Render ```mermaid blocks as <div class="mermaid"> for client-side rendering.
 const defaultFence = md.renderer.rules.fence!;
 md.renderer.rules.fence = (tokens, idx, options, env, self) => {
   const token = tokens[idx];
+  // Fences render via custom strings, so carry the source line manually.
+  const line = token.map ? ` data-line="${token.map[0]}"` : "";
   if (token.info.trim().toLowerCase() === "mermaid") {
-    return `<div class="mermaid">${md.utils.escapeHtml(token.content)}</div>`;
+    return `<div class="mermaid"${line}>${md.utils.escapeHtml(token.content)}</div>`;
   }
-  return defaultFence(tokens, idx, options, env, self);
+  const out = defaultFence(tokens, idx, options, env, self);
+  return line ? out.replace(/^<pre/, `<pre${line}`) : out;
 };
 
 export interface RenderResult {

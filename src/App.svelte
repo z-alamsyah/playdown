@@ -12,11 +12,13 @@
   import ContextMenu from "./lib/components/ContextMenu.svelte";
   import PromptModal from "./lib/components/PromptModal.svelte";
   import TerminalPanel from "./lib/components/TerminalPanel.svelte";
+  import AnnotationPanel from "./lib/components/AnnotationPanel.svelte";
   import logoUrl from "./lib/assets/logo.png";
   import { workspace } from "./lib/stores/workspace.svelte";
   import { groups } from "./lib/stores/groups.svelte";
   import { terminal } from "./lib/stores/terminal.svelte";
   import { drag } from "./lib/stores/drag.svelte";
+  import { annotations } from "./lib/stores/annotations.svelte";
   import { settings } from "./lib/stores/settings.svelte";
   import { keymap, IS_MAC, type Action } from "./lib/stores/keymap.svelte";
   import { ui } from "./lib/stores/ui.svelte";
@@ -51,6 +53,7 @@
 
   onMount(async () => {
     await settings.load();
+    await annotations.load();
     keymap.hydrate(settings.keymap);
     applyZoom();
 
@@ -150,6 +153,14 @@
       case "quickOpen": quickOpen = true; break;
       case "save": void groups.saveActive(); break;
       case "gotoLine": groups.gotoLine(); break;
+      case "toggleAnnotate": {
+        annotations.enabled = !annotations.enabled;
+        const g = groups.activeGroup;
+        if (annotations.enabled && g && g.viewMode === "edit") {
+          groups.setViewMode(g.id, "preview");
+        }
+        break;
+      }
       case "toggleView": groups.toggleViewActive(); break;
       case "toggleSidebar": settings.toggleSidebar(); break;
       case "toggleOutline": settings.toggleOutline(); break;
@@ -264,6 +275,14 @@
   <div class="drag-ghost" style="left: {drag.x}px; top: {drag.y}px">{drag.data.label}</div>
 {/if}
 
+{#snippet sidePanel(side: "left" | "right")}
+  {#if annotations.enabled}
+    <AnnotationPanel {side} />
+  {:else if settings.outlineVisible}
+    <Outline {side} />
+  {/if}
+{/snippet}
+
 {#snippet mainArea()}
   <main class="main">
     <div class="main-body" class:dock-right={settings.terminalSide === "right"} class:term-full={termFull}>
@@ -311,9 +330,9 @@
     {#if settings.sidebarSide === "left"}
       {#if settings.sidebarVisible}<Sidebar side="left" />{/if}
       {@render mainArea()}
-      {#if settings.outlineVisible}<Outline side="right" />{/if}
+      {@render sidePanel("right")}
     {:else}
-      {#if settings.outlineVisible}<Outline side="left" />{/if}
+      {@render sidePanel("left")}
       {@render mainArea()}
       {#if settings.sidebarVisible}<Sidebar side="right" />{/if}
     {/if}

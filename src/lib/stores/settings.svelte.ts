@@ -50,6 +50,7 @@ class Settings {
   terminalHeight = $state(240);
   terminalWidth = $state(480);
   terminalSide = $state<Dock>("bottom");
+  annotationWidth = $state(280);
   loaded = $state(false);
 
   async load() {
@@ -65,6 +66,8 @@ class Settings {
       const titlebarColor = await store.get<TitlebarColor>(storeKey("titlebarColor"));
       const terminalHeight = await store.get<number>("terminalHeight");
       const terminalWidth = await store.get<number>("terminalWidth");
+      const annotationWidth = await store.get<number>("annotationWidth");
+      if (typeof annotationWidth === "number") this.annotationWidth = annotationWidth;
       const terminalSide = await store.get<Dock>("terminalSide");
       const terminalOpen = await store.get<boolean>("terminalOpen");
       if (titlebarColor) this.titlebarColor = titlebarColor;
@@ -121,6 +124,11 @@ class Settings {
   async setTerminalWidth(px: number) {
     this.terminalWidth = px;
     await this.persist("terminalWidth", px);
+  }
+
+  async setAnnotationWidth(px: number) {
+    this.annotationWidth = px;
+    await this.persist("annotationWidth", px);
   }
 
   async setTerminalSide(side: Dock) {

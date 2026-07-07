@@ -18,7 +18,7 @@
   let ro: ResizeObserver | undefined;
   let onWinResize: (() => void) | undefined;
   let fitTimer: ReturnType<typeof setTimeout> | undefined;
-  let ready = false;
+  let ready = $state(false);
 
   // Debounce fits so dragging the panel doesn't flood the PTY with SIGWINCH
   // (which makes TUIs like Claude Code redraw repeatedly and leave artifacts).
@@ -175,6 +175,19 @@
   $effect(() => {
     terminal.focusSeq;
     if (active && ready) term?.focus();
+  });
+
+  // Paste text on request (annotation prompt hand-off). xterm's paste()
+  // uses bracketed paste when the app enabled it, so multi-line prompts
+  // don't auto-execute at a shell prompt.
+  let lastPasteSeq = 0;
+  $effect(() => {
+    const req = terminal.pasteReq;
+    if (req && req.seq !== lastPasteSeq && active && ready && term) {
+      lastPasteSeq = req.seq;
+      term.paste(req.text);
+      term.focus();
+    }
   });
 
   // On app zoom, counter it via font size so the column count stays put

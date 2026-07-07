@@ -16,6 +16,10 @@ export interface PromptState {
   placeholder?: string;
   value?: string;
   confirmLabel?: string;
+  /** Multi-line input (textarea; Cmd/Ctrl+Enter submits). */
+  multiline?: boolean;
+  /** Muted context shown above the input (e.g. the quoted text). */
+  detail?: string;
   onSubmit: (value: string) => void;
 }
 

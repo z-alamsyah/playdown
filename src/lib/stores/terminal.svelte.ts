@@ -21,6 +21,14 @@ class TerminalStore {
     this.focusSeq++;
   }
 
+  /** Ask the active <TerminalView> to paste text (bracketed paste via xterm,
+   *  so multi-line prompts don't auto-execute in the shell). */
+  pasteReq = $state<{ seq: number; text: string } | null>(null);
+
+  requestPaste(text: string) {
+    this.pasteReq = { seq: (this.pasteReq?.seq ?? 0) + 1, text };
+  }
+
   get active(): TermSession | null {
     return this.sessions.find((s) => s.id === this.activeId) ?? null;
   }
