@@ -29,6 +29,12 @@ class TerminalStore {
     this.pasteReq = { seq: (this.pasteReq?.seq ?? 0) + 1, text };
   }
 
+  /** Called by the session that handled the paste, so no other session
+   *  replays the request later (e.g. when it becomes active). */
+  consumePaste() {
+    this.pasteReq = null;
+  }
+
   get active(): TermSession | null {
     return this.sessions.find((s) => s.id === this.activeId) ?? null;
   }

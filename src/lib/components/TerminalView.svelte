@@ -59,9 +59,9 @@
   }
 
   function theme() {
-    return settings.theme === "dark"
-      ? { background: "#16171a", foreground: "#d4d6db", cursor: "#4c8bf5", selectionBackground: "#33405a" }
-      : { background: "#ffffff", foreground: "#24292f", cursor: "#0969da", selectionBackground: "#bcd6f5" };
+    return settings.isDark
+      ? { background: "#0d1117", foreground: "#e6edf3", cursor: "#58a6ff", selectionBackground: "#1c4f9c" }
+      : { background: "#ffffff", foreground: "#1f2328", cursor: "#0969da", selectionBackground: "#b6d3f5" };
   }
 
   function doFit() {
@@ -179,12 +179,13 @@
 
   // Paste text on request (annotation prompt hand-off). xterm's paste()
   // uses bracketed paste when the app enabled it, so multi-line prompts
-  // don't auto-execute at a shell prompt.
-  let lastPasteSeq = 0;
+  // don't auto-execute at a shell prompt. Consuming the request globally
+  // ensures ONLY the currently active session pastes it — inactive tabs
+  // must never replay it when they later become active.
   $effect(() => {
     const req = terminal.pasteReq;
-    if (req && req.seq !== lastPasteSeq && active && ready && term) {
-      lastPasteSeq = req.seq;
+    if (req && active && ready && term) {
+      terminal.consumePaste();
       term.paste(req.text);
       term.focus();
     }
@@ -203,9 +204,16 @@
     }
   });
 
-  // Live theme updates.
+  // Live theme updates. theme() must be called unconditionally: when this
+  // effect first ran `term` didn't exist yet, so a conditional read would
+  // never register the reactive dependency and the effect would stay dead.
   $effect(() => {
-    if (term) term.options.theme = theme();
+    const th = theme();
+    if (ready && term) {
+      term.options.theme = th;
+      // Canvas/WebGL renderers cache glyphs — rebuild so colors apply fully.
+      requestAnimationFrame(() => renderer?.clearTextureAtlas?.());
+    }
   });
 
   onDestroy(() => {

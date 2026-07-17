@@ -24,10 +24,35 @@
       void moveEntry(drag.data.path, workspace.root);
     }
   }
+
+  const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
+
+  function startResize(e: PointerEvent) {
+    e.preventDefault();
+    const startX = e.clientX;
+    const startW = settings.sidebarWidth;
+    const move = (ev: PointerEvent) => {
+      const dx = ev.clientX - startX;
+      const next = side === "left" ? startW + dx : startW - dx;
+      settings.sidebarWidth = clamp(next, 160, window.innerWidth * 0.5);
+    };
+    const up = () => {
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", up);
+      void settings.setSidebarWidth(settings.sidebarWidth);
+    };
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
+  }
 </script>
 
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-<aside class="sidebar panel-{side}" onkeydown={onKey}>
+<aside class="sidebar panel-{side}" style="width: {settings.sidebarWidth}px" onkeydown={onKey}>
+  <button
+    class="panel-resize {side}"
+    aria-label="Resize sidebar"
+    onpointerdown={startResize}
+  ></button>
   <div class="sidebar-header">
     <span class="folder-name" title={workspace.root ?? ""}>
       {workspace.rootName || "No folder"}
@@ -47,7 +72,14 @@
             <path d="M12 10v6" /><path d="M9 13h6" />
           </svg>
         </button>
-        <button class="icon-btn" title="Refresh" onclick={() => workspace.refresh()}>⟳</button>
+        <button class="icon-btn" title="Refresh" onclick={() => workspace.refresh()} aria-label="Refresh">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
+            <path d="M21 3v5h-5" />
+            <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
+            <path d="M8 16H3v5" />
+          </svg>
+        </button>
         <button class="icon-btn" title="Close folder" onclick={() => closeFolder()} aria-label="Close folder">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z" />
@@ -55,7 +87,11 @@
           </svg>
         </button>
       {/if}
-      <button class="icon-btn" title="Open folder (⌘O)" onclick={() => workspace.openFolder()}>📂</button>
+      <button class="icon-btn" title="Open folder (⌘O)" onclick={() => workspace.openFolder()} aria-label="Open folder">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2" />
+        </svg>
+      </button>
       <button class="icon-btn" title="Hide sidebar (⌘B)" onclick={() => settings.setSidebarVisible(false)}>×</button>
     </div>
   </div>

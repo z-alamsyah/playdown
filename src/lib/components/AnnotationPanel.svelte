@@ -35,6 +35,8 @@
     if (!settings.terminalOpen) void settings.setTerminalOpen(true);
     terminal.ensureOne();
     terminal.requestPaste(text);
+    // Hand-off done — start the next review round with a clean slate.
+    annotations.clearAll();
   }
 
   async function clearFile() {

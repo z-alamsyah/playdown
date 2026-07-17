@@ -93,11 +93,24 @@
         class="ghost-btn"
         title="Toggle edit / preview (⌘E)"
         onclick={toggleView}
+        aria-label="Toggle edit / preview"
       >
-        {group.viewMode === "edit" ? "👁" : "✏️"}
+        {#if group.viewMode === "edit"}
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+            <circle cx="12" cy="12" r="3" />
+          </svg>
+        {:else}
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+          </svg>
+        {/if}
       </button>
-      <button class="ghost-btn" title="Split right (⌘\)" onclick={splitRight}>
-        ⊟
+      <button class="ghost-btn" title="Split right (⌘\)" onclick={splitRight} aria-label="Split right">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="18" height="18" rx="2" />
+          <line x1="12" y1="3" x2="12" y2="21" />
+        </svg>
       </button>
     </div>
   </div>

@@ -116,7 +116,7 @@
     });
 
     if (result.hasMermaid) {
-      const isDark = settings.theme === "dark";
+      const isDark = settings.isDark;
       void import("mermaid")
         .then(({ default: mermaid }) => {
           mermaid.initialize({

@@ -51,11 +51,17 @@ class Settings {
   terminalWidth = $state(480);
   terminalSide = $state<Dock>("bottom");
   annotationWidth = $state(280);
+  sidebarWidth = $state(250);
   loaded = $state(false);
 
   async load() {
     try {
-      const theme = await store.get<Theme>("theme");
+      // Legacy migration: the short-lived "github-*" theme names collapsed
+      // into plain dark/light (which now ARE the GitHub palettes).
+      const rawTheme = await store.get<string>("theme");
+      const theme = (
+        rawTheme === "github-dark" ? "dark" : rawTheme === "github-light" ? "light" : rawTheme
+      ) as Theme | undefined;
       const lastFolder = await store.get<string>(storeKey("lastFolder"));
       const session = await store.get<SessionState>(storeKey("session"));
       const sidebarSide = await store.get<Side>("sidebarSide");
@@ -68,6 +74,8 @@ class Settings {
       const terminalWidth = await store.get<number>("terminalWidth");
       const annotationWidth = await store.get<number>("annotationWidth");
       if (typeof annotationWidth === "number") this.annotationWidth = annotationWidth;
+      const sidebarWidth = await store.get<number>("sidebarWidth");
+      if (typeof sidebarWidth === "number") this.sidebarWidth = sidebarWidth;
       const terminalSide = await store.get<Dock>("terminalSide");
       const terminalOpen = await store.get<boolean>("terminalOpen");
       if (titlebarColor) this.titlebarColor = titlebarColor;
@@ -131,6 +139,11 @@ class Settings {
     await this.persist("annotationWidth", px);
   }
 
+  async setSidebarWidth(px: number) {
+    this.sidebarWidth = px;
+    await this.persist("sidebarWidth", px);
+  }
+
   async setTerminalSide(side: Dock) {
     this.terminalSide = side;
     await this.persist("terminalSide", side);
@@ -144,6 +157,11 @@ class Settings {
     this.theme = theme;
     this.apply();
     await this.persist("theme", theme);
+  }
+
+  /** True for the dark theme (drives editor/terminal/mermaid colors). */
+  get isDark(): boolean {
+    return this.theme === "dark";
   }
 
   toggleTheme() {

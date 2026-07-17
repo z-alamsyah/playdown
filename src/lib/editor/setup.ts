@@ -26,11 +26,17 @@ import {
   foldGutter,
   foldKeymap,
 } from "@codemirror/language";
-import { oneDark } from "@codemirror/theme-one-dark";
+import { githubDark, githubLight } from "./githubTheme";
+import type { Theme } from "../types";
 import { frontmatterExtension } from "./frontmatter";
 
 /** Swappable theme so dark/light can change without rebuilding the editor. */
 export const themeCompartment = new Compartment();
+
+/** Editor theme extension for an app theme (GitHub palettes). */
+export function editorTheme(theme: Theme): Extension {
+  return theme === "dark" ? githubDark : githubLight;
+}
 
 /** Holds the markdown extension so code-fence grammars (language-data) can be
  *  swapped in lazily after the editor mounts, keeping that ~200KB off the
@@ -50,7 +56,7 @@ export type EditorLanguage = "markdown" | "json" | "text";
 export interface EditorOptions {
   parent: HTMLElement;
   doc: string;
-  dark: boolean;
+  theme: Extension;
   language: EditorLanguage;
   onChange: (value: string) => void;
   onSave: () => void;
@@ -108,7 +114,7 @@ export function createEditor(opts: EditorOptions): EditorView {
       ]),
       updateListener,
       baseTheme,
-      themeCompartment.of(opts.dark ? oneDark : []),
+      themeCompartment.of(opts.theme),
     ],
   });
 

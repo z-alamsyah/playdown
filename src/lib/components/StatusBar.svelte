@@ -36,7 +36,7 @@
     <span class="counts">{Math.round(settings.zoom * 100)}%</span>
     <button class="status-btn" title="Toggle terminal (Ctrl+`)" onclick={() => settings.toggleTerminal()}>❯_</button>
     <button class="status-btn" title="Toggle theme" onclick={() => settings.toggleTheme()}>
-      {settings.theme === "dark" ? "🌙" : "☀️"}
+      {settings.isDark ? "🌙" : "☀️"}
     </button>
     <button class="status-btn" title="Settings (⌘,)" onclick={onOpenSettings}>⚙</button>
   </div>

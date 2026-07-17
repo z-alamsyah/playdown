@@ -64,6 +64,12 @@ class Annotations {
     void this.persist();
   }
 
+  /** Wipe every file's annotations (after a successful hand-off). */
+  clearAll() {
+    this.byFile = {};
+    void this.persist();
+  }
+
   /** Build an AI-ready prompt from every file that has annotations. */
   formatPrompt(relativeOf: (p: string) => string): string {
     const files = Object.keys(this.byFile).filter(

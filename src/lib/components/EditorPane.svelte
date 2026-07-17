@@ -1,8 +1,7 @@
 <script lang="ts">
   import { onMount, onDestroy } from "svelte";
   import { EditorView } from "@codemirror/view";
-  import { oneDark } from "@codemirror/theme-one-dark";
-  import { createEditor, themeCompartment, type EditorLanguage } from "../editor/setup";
+  import { createEditor, themeCompartment, editorTheme, type EditorLanguage } from "../editor/setup";
   import { groups } from "../stores/groups.svelte";
   import { settings } from "../stores/settings.svelte";
   import type { FileKind } from "../fileKind";
@@ -18,7 +17,7 @@
     view = createEditor({
       parent: container,
       doc: groups.docContent(path),
-      dark: settings.theme === "dark",
+      theme: editorTheme(settings.theme),
       language,
       onChange: (v) => groups.setDocContent(path, v),
       onSave: () => void groups.saveDoc(path),
@@ -28,9 +27,9 @@
 
   // React to live theme changes without rebuilding the editor.
   $effect(() => {
-    const dark = settings.theme === "dark";
+    const theme = editorTheme(settings.theme);
     view?.dispatch({
-      effects: themeCompartment.reconfigure(dark ? oneDark : []),
+      effects: themeCompartment.reconfigure(theme),
     });
   });
 

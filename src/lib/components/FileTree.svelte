@@ -43,18 +43,7 @@
 </script>
 
 {#snippet ficon(name: string, isDir: boolean)}
-  {@const ic = iconFor(name, isDir)}
-  <svg
-    class="fticon"
-    viewBox="0 0 24 24"
-    width="15"
-    height="15"
-    fill={ic.fill ? ic.color : "none"}
-    stroke={ic.fill ? "none" : ic.color}
-    stroke-width="1.9"
-    stroke-linecap="round"
-    stroke-linejoin="round">{@html ic.paths}</svg
-  >
+  <svg class="fticon" viewBox="0 0 24 24" width="16" height="16">{@html iconFor(name, isDir)}</svg>
 {/snippet}
 
 <ul class="filetree" class:nested={depth > 0}>
@@ -77,7 +66,11 @@
           }}
           oncontextmenu={(e) => onContext(e, node)}
         >
-          <span class="caret">{expanded[node.path] ? "▾" : "▸"}</span>
+          <span class="caret" class:open={expanded[node.path]}>
+            <svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="m5.5 3.5 5 4.5-5 4.5" />
+            </svg>
+          </span>
           {@render ficon(node.name, true)}
           <span class="label">{node.name}</span>
         </button>
