@@ -52,6 +52,8 @@ class Settings {
   terminalSide = $state<Dock>("bottom");
   annotationWidth = $state(280);
   sidebarWidth = $state(250);
+  jsonSortKeys = $state(false);
+  recentFolders = $state<string[]>([]);
   loaded = $state(false);
 
   async load() {
@@ -76,6 +78,10 @@ class Settings {
       if (typeof annotationWidth === "number") this.annotationWidth = annotationWidth;
       const sidebarWidth = await store.get<number>("sidebarWidth");
       if (typeof sidebarWidth === "number") this.sidebarWidth = sidebarWidth;
+      const jsonSortKeys = await store.get<boolean>("jsonSortKeys");
+      if (typeof jsonSortKeys === "boolean") this.jsonSortKeys = jsonSortKeys;
+      const recentFolders = await store.get<string[]>("recentFolders");
+      if (Array.isArray(recentFolders)) this.recentFolders = recentFolders;
       const terminalSide = await store.get<Dock>("terminalSide");
       const terminalOpen = await store.get<boolean>("terminalOpen");
       if (titlebarColor) this.titlebarColor = titlebarColor;
@@ -142,6 +148,17 @@ class Settings {
   async setSidebarWidth(px: number) {
     this.sidebarWidth = px;
     await this.persist("sidebarWidth", px);
+  }
+
+  async setJsonSortKeys(v: boolean) {
+    this.jsonSortKeys = v;
+    await this.persist("jsonSortKeys", v);
+  }
+
+  /** Most-recent-first, deduped, capped list of opened workspace folders. */
+  async addRecentFolder(path: string) {
+    this.recentFolders = [path, ...this.recentFolders.filter((p) => p !== path)].slice(0, 8);
+    await this.persist("recentFolders", $state.snapshot(this.recentFolders));
   }
 
   async setTerminalSide(side: Dock) {

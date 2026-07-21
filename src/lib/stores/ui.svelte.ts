@@ -30,6 +30,17 @@ class UI {
   /** Currently selected node in the sidebar tree (for ⌘C copy path, etc.). */
   selectedPath = $state<string | null>(null);
   selectedIsDir = $state(false);
+  /** File marked via "Select for Compare" (file-compare flow). */
+  compareLeft = $state<string | null>(null);
+  /** Transient toast (errors, confirmations). */
+  notice = $state<{ text: string; kind: "error" | "ok" } | null>(null);
+  private noticeTimer: ReturnType<typeof setTimeout> | undefined;
+
+  flash(text: string, kind: "error" | "ok" = "error", ms = 4000) {
+    this.notice = { text, kind };
+    clearTimeout(this.noticeTimer);
+    this.noticeTimer = setTimeout(() => (this.notice = null), ms);
+  }
 
   select(path: string, isDir: boolean) {
     this.selectedPath = path;

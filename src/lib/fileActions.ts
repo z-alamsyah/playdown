@@ -154,5 +154,24 @@ export function nodeMenuItems(node: FileNode): MenuItem[] {
   if (!node.is_dir && isHtml(node.path)) {
     items.unshift({ label: "Open in Browser", action: () => openInBrowser(node.path) });
   }
+  if (!node.is_dir) {
+    const compare: MenuItem[] = [];
+    if (ui.compareLeft && ui.compareLeft !== node.path) {
+      const left = ui.compareLeft;
+      compare.push({
+        label: "Compare with Selected",
+        action: () => {
+          groups.openDiff(left, node.path);
+          ui.compareLeft = null;
+        },
+      });
+    }
+    compare.push({ label: "Select for Compare", action: () => (ui.compareLeft = node.path) });
+    if (workspace.isGitRepo) {
+      compare.push({ label: "Diff vs HEAD", action: () => groups.openGitDiff(node.path) });
+    }
+    if (compare.length) compare[0].separator = true;
+    items.splice(items.length - 1, 0, ...compare); // just above Delete
+  }
   return items;
 }

@@ -105,6 +105,17 @@
     </section>
 
     <section>
+      <h3>JSON</h3>
+      <div class="setting-row">
+        <span>Sort keys on format / minify</span>
+        <div class="seg">
+          <button class:on={settings.jsonSortKeys} onclick={() => settings.setJsonSortKeys(true)}>On</button>
+          <button class:on={!settings.jsonSortKeys} onclick={() => settings.setJsonSortKeys(false)}>Off</button>
+        </div>
+      </div>
+    </section>
+
+    <section>
       <div class="section-head">
         <h3>Shortcuts</h3>
         <button class="link-btn" onclick={() => keymap.resetAll()}>reset all</button>

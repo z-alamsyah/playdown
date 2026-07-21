@@ -234,6 +234,93 @@ fn get_launch_path(state: tauri::State<LaunchPath>) -> Option<String> {
     state.0.clone()
 }
 
+/// One content match for the global search palette.
+#[derive(Serialize)]
+struct SearchMatch {
+    path: String,
+    /// 0-based line index.
+    line: u32,
+    /// Trimmed line excerpt (capped).
+    text: String,
+}
+
+/// Case-insensitive substring search across all text files in the workspace
+/// (same directory pruning as the file tree). Caps results and file size so
+/// a runaway query can't hurt; binary files fail UTF-8 read and are skipped.
+#[tauri::command]
+fn search_in_files(root: String, query: String) -> Result<Vec<SearchMatch>, String> {
+    const MAX_RESULTS: usize = 500;
+    const MAX_FILE_SIZE: u64 = 1_500_000;
+    let q = query.to_lowercase();
+    if q.trim().is_empty() {
+        return Ok(Vec::new());
+    }
+    let mut out: Vec<SearchMatch> = Vec::new();
+    let mut stack = vec![PathBuf::from(&root)];
+    while let Some(dir) = stack.pop() {
+        let Ok(read) = fs::read_dir(&dir) else { continue };
+        for entry in read.filter_map(|e| e.ok()) {
+            let path = entry.path();
+            let name = entry.file_name().to_string_lossy().into_owned();
+            if path.is_dir() {
+                if !SKIP_DIRS.contains(&name.as_str()) {
+                    stack.push(path);
+                }
+                continue;
+            }
+            if entry.metadata().map(|m| m.len() > MAX_FILE_SIZE).unwrap_or(true) {
+                continue;
+            }
+            let Ok(content) = fs::read_to_string(&path) else { continue };
+            for (i, line) in content.lines().enumerate() {
+                if line.to_lowercase().contains(&q) {
+                    out.push(SearchMatch {
+                        path: path.to_string_lossy().into_owned(),
+                        line: i as u32,
+                        text: line.trim().chars().take(200).collect(),
+                    });
+                    if out.len() >= MAX_RESULTS {
+                        return Ok(out);
+                    }
+                }
+            }
+        }
+    }
+    Ok(out)
+}
+
+/// True when `path` is inside a git work tree (enables "Diff vs HEAD").
+#[tauri::command]
+fn is_git_repo(path: String) -> bool {
+    std::process::Command::new("git")
+        .current_dir(&path)
+        .args(["rev-parse", "--is-inside-work-tree"])
+        .output()
+        .map(|o| o.status.success())
+        .unwrap_or(false)
+}
+
+/// Content of a file at HEAD (left side of "Diff vs HEAD"). `.output()`
+/// waits for the child, so no zombie processes.
+#[tauri::command]
+fn git_head_content(root: String, path: String) -> Result<String, String> {
+    let rel = Path::new(&path)
+        .strip_prefix(&root)
+        .map_err(|_| "File is outside the workspace".to_string())?;
+    let spec = format!("HEAD:./{}", rel.to_string_lossy().replace('\\', "/"));
+    let out = std::process::Command::new("git")
+        .current_dir(&root)
+        .arg("show")
+        .arg(&spec)
+        .output()
+        .map_err(|e| e.to_string())?;
+    if out.status.success() {
+        Ok(String::from_utf8_lossy(&out.stdout).into_owned())
+    } else {
+        Err(String::from_utf8_lossy(&out.stderr).trim().to_string())
+    }
+}
+
 /// Watch `path` recursively; emit `fs-change` with the affected paths when
 /// files are modified/created/removed (so open docs auto-reload + the tree
 /// refreshes). Replaces any previous watcher.
@@ -467,6 +554,9 @@ pub fn run() {
             rename_path,
             read_image_data_url,
             get_launch_path,
+            search_in_files,
+            is_git_repo,
+            git_head_content,
             watch_dir,
             copy_into,
             open_in_browser,

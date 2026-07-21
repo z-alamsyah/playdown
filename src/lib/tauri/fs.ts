@@ -39,3 +39,14 @@ export const importFile = (dir: string, name: string, dataBase64: string) =>
 
 /** Watch a folder recursively; the backend emits `fs-change` on edits. */
 export const watchDir = (path: string) => invoke<void>("watch_dir", { path });
+
+export interface SearchMatch {
+  path: string;
+  /** 0-based line index. */
+  line: number;
+  text: string;
+}
+
+/** Case-insensitive content search across the workspace (capped). */
+export const searchInFiles = (root: string, query: string) =>
+  invoke<SearchMatch[]>("search_in_files", { root, query });

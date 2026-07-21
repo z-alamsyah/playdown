@@ -3,6 +3,8 @@ import { settings } from "./settings.svelte";
 export type Action =
   | "openFolder"
   | "quickOpen"
+  | "globalSearch"
+  | "commandPalette"
   | "save"
   | "gotoLine"
   | "toggleView"
@@ -20,6 +22,7 @@ export type Action =
   | "zoomOut"
   | "zoomReset"
   | "formatDoc"
+  | "minifyDoc"
   | "toggleTerminal"
   | "newTerminal"
   | "nextTerminal"
@@ -37,6 +40,8 @@ export interface ActionDef {
 export const ACTIONS: ActionDef[] = [
   { id: "openFolder", label: "Open folder" },
   { id: "quickOpen", label: "Quick open (find file)" },
+  { id: "globalSearch", label: "Search in files" },
+  { id: "commandPalette", label: "Command palette" },
   { id: "save", label: "Save file" },
   { id: "gotoLine", label: "Go to line" },
   { id: "toggleView", label: "Toggle edit / preview" },
@@ -54,6 +59,7 @@ export const ACTIONS: ActionDef[] = [
   { id: "zoomOut", label: "Zoom out" },
   { id: "zoomReset", label: "Reset zoom" },
   { id: "formatDoc", label: "Format JSON" },
+  { id: "minifyDoc", label: "Minify JSON" },
   { id: "toggleTerminal", label: "Toggle terminal" },
   { id: "newTerminal", label: "New terminal session" },
   { id: "nextTerminal", label: "Next terminal session" },
@@ -67,6 +73,8 @@ export const ACTIONS: ActionDef[] = [
 const DEFAULTS: Record<Action, string> = {
   openFolder: "Mod+O",
   quickOpen: "Mod+P",
+  globalSearch: "Mod+Shift+F",
+  commandPalette: "Mod+Shift+P",
   save: "Mod+S",
   gotoLine: "Mod+G",
   toggleView: "Mod+E",
@@ -83,7 +91,8 @@ const DEFAULTS: Record<Action, string> = {
   zoomIn: "Mod+=",
   zoomOut: "Mod+-",
   zoomReset: "Mod+0",
-  formatDoc: "Mod+Shift+F",
+  formatDoc: "Alt+Shift+F",
+  minifyDoc: "Mod+Shift+M",
   toggleTerminal: "Ctrl+`",
   newTerminal: "Mod+T",
   nextTerminal: "Mod+Alt+ArrowDown",
@@ -99,6 +108,12 @@ export const IS_MAC =
   navigator.platform.toLowerCase().includes("mac");
 
 function normalizeKey(e: KeyboardEvent): string {
+  // With Option held, macOS composes special characters (⌥⇧F → "Ï"), so
+  // derive the key from the physical code instead of the composed char.
+  if (e.altKey) {
+    if (/^Key[A-Z]$/.test(e.code)) return e.code.slice(3);
+    if (/^Digit[0-9]$/.test(e.code)) return e.code.slice(5);
+  }
   const k = e.key;
   if (k === " ") return "Space";
   if (k.length === 1) return k.toUpperCase();

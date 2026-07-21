@@ -12,9 +12,23 @@ import { openSearchPanel, gotoLine } from "@codemirror/search";
 import { readFile, writeFile } from "../tauri/fs";
 import type { Heading } from "../markdown/render";
 import { fileKind, isImage } from "../fileKind";
+import { ui } from "./ui.svelte";
+import { settings } from "./settings.svelte";
 
 function uid(): string {
   return crypto.randomUUID();
+}
+
+function sortKeysDeep(v: unknown): unknown {
+  if (Array.isArray(v)) return v.map(sortKeysDeep);
+  if (v && typeof v === "object") {
+    const out: Record<string, unknown> = {};
+    for (const k of Object.keys(v as Record<string, unknown>).sort()) {
+      out[k] = sortKeysDeep((v as Record<string, unknown>)[k]);
+    }
+    return out;
+  }
+  return v;
 }
 
 function baseName(path: string): string {
@@ -169,25 +183,80 @@ class GroupsStore {
     g.activeIndex = g.tabs.length - 1;
   }
 
-  /** Pretty-print the active JSON document (in the editor or the buffer). */
-  formatActive() {
+  /** Parse the active JSON doc, transform, and write it back. On parse
+   *  errors, surface the message (and jump to the position when the engine
+   *  reports one — V8 does, JavaScriptCore often doesn't). */
+  private transformActiveJson(transform: (parsed: unknown) => string) {
     const g = this.activeGroup;
     const t = this.activeTab;
     if (!g || !t || fileKind(t.path) !== "json") return;
     const view = this.editors.get(g.id);
+    const source = view ? view.state.doc.toString() : this.docContent(t.path);
     try {
+      let parsed = JSON.parse(source);
+      if (settings.jsonSortKeys) parsed = sortKeysDeep(parsed);
+      const output = transform(parsed);
       if (view) {
-        const formatted = JSON.stringify(JSON.parse(view.state.doc.toString()), null, 2);
-        view.dispatch({
-          changes: { from: 0, to: view.state.doc.length, insert: formatted },
-        });
+        view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: output } });
       } else {
-        const formatted = JSON.stringify(JSON.parse(this.docContent(t.path)), null, 2);
-        this.setDocContent(t.path, formatted);
+        this.setDocContent(t.path, output);
       }
+      ui.flash(output === source ? "Already formatted" : "JSON formatted ✓", "ok", 2000);
     } catch (e) {
-      console.error("Format failed — invalid JSON:", e);
+      const msg = String(e instanceof Error ? e.message : e).replace(/^JSON Parse error: /, "");
+      const m = /position (\d+)/.exec(msg);
+      let loc = "";
+      if (m) {
+        const pos = Math.min(Number(m[1]), source.length);
+        loc = ` (line ${source.slice(0, pos).split("\n").length})`;
+        if (view) {
+          const p = Math.min(pos, view.state.doc.length);
+          view.dispatch({
+            selection: { anchor: p },
+            effects: EditorView.scrollIntoView(p, { y: "center" }),
+          });
+          view.focus();
+        }
+      }
+      ui.flash(`Invalid JSON${loc}: ${msg}`);
     }
+  }
+
+  // ---- diff tabs -------------------------------------------------------------
+  /** Open a side-by-side compare of two files in a virtual tab. */
+  openDiff(left: string, right: string) {
+    this.openVirtual(`diff://${left}\u001f${right}`, `${baseName(left)} ↔ ${baseName(right)}`);
+  }
+
+  /** Open a diff of a file against its committed HEAD version. */
+  openGitDiff(path: string) {
+    this.openVirtual(`gitdiff://${path}`, `${baseName(path)} (HEAD)`);
+  }
+
+  /** A tab whose path isn't a real file — no document buffer behind it.
+   *  Such tabs are dropped on session restore (readFile fails → skipped). */
+  private openVirtual(vpath: string, name: string) {
+    this.ensureInitial();
+    const g = this.activeGroup;
+    if (!g) return;
+    this.activeGroupId = g.id;
+    const existing = g.tabs.findIndex((t) => t.path === vpath);
+    if (existing >= 0) {
+      g.activeIndex = existing;
+      return;
+    }
+    g.tabs.push({ path: vpath, name });
+    g.activeIndex = g.tabs.length - 1;
+  }
+
+  /** Pretty-print the active JSON document (⌘⇧F). */
+  formatActive() {
+    this.transformActiveJson((v) => JSON.stringify(v, null, 2));
+  }
+
+  /** Minify the active JSON document (⌘⇧M). */
+  minifyActive() {
+    this.transformActiveJson((v) => JSON.stringify(v));
   }
 
   /** Focus the active editor and open its find panel. Returns false if the

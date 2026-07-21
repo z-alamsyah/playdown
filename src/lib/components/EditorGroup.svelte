@@ -5,6 +5,8 @@
   import EditorPane from "./EditorPane.svelte";
   import PreviewPane from "./PreviewPane.svelte";
   import ImagePane from "./ImagePane.svelte";
+  import DiffPane from "./DiffPane.svelte";
+  import { settings } from "../stores/settings.svelte";
   import { fileKind } from "../fileKind";
   import { drag } from "../stores/drag.svelte";
   import { annotations } from "../stores/annotations.svelte";
@@ -127,6 +129,10 @@
       {#key activeTab.path + "::" + group.viewMode}
         {#if kind === "image"}
           <ImagePane path={activeTab.path} />
+        {:else if kind === "diff"}
+          {#key settings.theme}
+            <DiffPane path={activeTab.path} />
+          {/key}
         {:else if group.viewMode === "edit"}
           <EditorPane path={activeTab.path} groupId={group.id} {kind} />
         {:else}

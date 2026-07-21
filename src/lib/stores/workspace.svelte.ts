@@ -1,4 +1,5 @@
 import { open } from "@tauri-apps/plugin-dialog";
+import { invoke } from "@tauri-apps/api/core";
 import type { FileNode, FlatFile } from "../types";
 import { listDirTree, createFile, createDir, watchDir } from "../tauri/fs";
 import { settings } from "./settings.svelte";
@@ -9,6 +10,8 @@ class Workspace {
   rootName = $state("");
   tree = $state<FileNode[]>([]);
   loading = $state(false);
+  /** Workspace root is a git work tree (enables "Diff vs HEAD"). */
+  isGitRepo = $state(false);
 
   /** Flattened list of files (for the quick-open palette). */
   get files(): FlatFile[] {
@@ -42,7 +45,9 @@ class Workspace {
     try {
       this.tree = await listDirTree(path);
       await settings.setLastFolder(path);
+      void settings.addRecentFolder(path);
       void watchDir(path).catch(() => {}); // auto-reload open files on external edits
+      this.isGitRepo = await invoke<boolean>("is_git_repo", { path }).catch(() => false);
     } catch (e) {
       console.error("Failed to list directory:", e);
       this.tree = [];
@@ -56,6 +61,7 @@ class Workspace {
     this.root = null;
     this.rootName = "";
     this.tree = [];
+    this.isGitRepo = false;
     await settings.setLastFolder(null);
   }
 

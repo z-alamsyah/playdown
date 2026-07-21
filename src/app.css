@@ -1823,3 +1823,235 @@ kbd {
   margin: 4px 0 0;
   font-size: 11px;
 }
+
+/* ============================================================
+   Diff view (file compare / diff vs HEAD)
+   ============================================================ */
+.diff-pane {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+}
+.diff-head {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px;
+  flex-shrink: 0;
+  background: var(--bg-elev);
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+  font-family: var(--mono);
+}
+.diff-side {
+  padding: 6px 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.diff-side.removed {
+  color: var(--danger);
+}
+.diff-side.added {
+  color: #3fb950;
+}
+.diff-body {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+.diff-body .cm-mergeView {
+  height: 100%;
+}
+.diff-body .cm-mergeViewEditors {
+  height: 100%;
+}
+.diff-body .cm-mergeViewEditor {
+  overflow: auto;
+}
+/* GitHub diff colors */
+.cm-merge-a .cm-changedLine {
+  background: rgba(248, 81, 73, 0.13);
+}
+.cm-merge-a .cm-changedText {
+  background: rgba(248, 81, 73, 0.35);
+}
+.cm-merge-b .cm-changedLine {
+  background: rgba(63, 185, 80, 0.13);
+}
+.cm-merge-b .cm-changedText {
+  background: rgba(63, 185, 80, 0.35);
+}
+.cm-collapsedLines {
+  background: var(--bg-soft);
+  color: var(--text-faint);
+}
+
+/* Transient toast (JSON errors / confirmations) */
+@keyframes toast-in {
+  from { opacity: 0; transform: translate(-50%, 8px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+.toast {
+  position: fixed;
+  bottom: 52px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 90;
+  max-width: min(640px, 80vw);
+  padding: 9px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
+  animation: toast-in 0.15s ease-out;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.toast.error {
+  color: var(--danger);
+  border-color: var(--danger);
+}
+.toast.ok {
+  color: #3fb950;
+  border-color: #2ea043;
+}
+
+/* ============================================================
+   Global search palette
+   ============================================================ */
+.gs-file {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  padding: 8px 12px 3px;
+  cursor: default;
+}
+.gs-file .qo-name {
+  font-weight: 600;
+}
+.gs-count {
+  margin-left: auto;
+  background: var(--bg-soft);
+  border-radius: 10px;
+  font-size: 11px;
+  padding: 0 7px;
+  color: var(--text-faint);
+  flex-shrink: 0;
+}
+.gs-match {
+  display: flex;
+  gap: 10px;
+  padding: 4px 12px 4px 22px;
+  border-radius: 5px;
+  cursor: pointer;
+  overflow: hidden;
+}
+.gs-match.sel {
+  background: var(--accent-soft);
+}
+.gs-line {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-faint);
+  min-width: 30px;
+  text-align: right;
+  flex-shrink: 0;
+}
+.gs-text {
+  font-size: 12.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--text-muted);
+}
+.gs-text mark {
+  background: rgba(210, 153, 34, 0.4);
+  color: var(--text);
+  border-radius: 2px;
+  padding: 0 1px;
+}
+
+/* Command palette hint (keybinding / path) */
+.cp-hint {
+  margin-left: auto;
+  font-family: var(--mono);
+  font-size: 11px;
+  flex-shrink: 0;
+}
+
+/* Recent folders on the welcome screen */
+.recent-folders {
+  margin-top: 28px;
+  width: min(460px, 80%);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.recent-title {
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+.recent-row {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 6px 10px;
+  text-align: left;
+  overflow: hidden;
+}
+.recent-row:hover {
+  background: var(--bg-hover);
+}
+.recent-name {
+  color: var(--accent);
+  font-weight: 600;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+.recent-path {
+  color: var(--text-faint);
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ============================================================
+   Git change indicators (editor gutter)
+   ============================================================ */
+.cm-git-gutter {
+  width: 5px;
+}
+.cm-git-gutter .cm-gutterElement {
+  padding: 0;
+  cursor: pointer;
+}
+.git-mark {
+  width: 3px;
+  height: 100%;
+  border-radius: 2px;
+}
+.git-mark.added {
+  background: #3fb950;
+}
+.git-mark.modified {
+  background: #58a6ff;
+}
+.git-mark.deleted {
+  width: 0;
+  height: 0;
+  border-left: 6px solid #f85149;
+  border-top: 4px solid transparent;
+  border-bottom: 4px solid transparent;
+}

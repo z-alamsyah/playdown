@@ -8,6 +8,8 @@
   import Layout from "./lib/components/Layout.svelte";
   import StatusBar from "./lib/components/StatusBar.svelte";
   import QuickOpen from "./lib/components/QuickOpen.svelte";
+  import GlobalSearch from "./lib/components/GlobalSearch.svelte";
+  import CommandPalette from "./lib/components/CommandPalette.svelte";
   import Settings from "./lib/components/Settings.svelte";
   import ContextMenu from "./lib/components/ContextMenu.svelte";
   import PromptModal from "./lib/components/PromptModal.svelte";
@@ -27,6 +29,8 @@
   import { applyZoom, zoomIn, zoomOut, zoomReset, zoomBy } from "./lib/tauri/zoom";
 
   let quickOpen = $state(false);
+  let searchOpen = $state(false);
+  let paletteOpen = $state(false);
   let settingsOpen = $state(false);
   let unlistenCli: (() => void) | undefined;
   let unlistenDrop: (() => void) | undefined;
@@ -151,6 +155,8 @@
     switch (a) {
       case "openFolder": void workspace.openFolder(); break;
       case "quickOpen": quickOpen = true; break;
+      case "globalSearch": searchOpen = true; break;
+      case "commandPalette": paletteOpen = true; break;
       case "save": void groups.saveActive(); break;
       case "gotoLine": groups.gotoLine(); break;
       case "toggleAnnotate": {
@@ -173,6 +179,7 @@
       case "zoomOut": zoomOut(); break;
       case "zoomReset": zoomReset(); break;
       case "formatDoc": groups.formatActive(); break;
+      case "minifyDoc": groups.minifyActive(); break;
       case "toggleTerminal": settings.toggleTerminal(); break;
       case "focusTerminal":
         if (terminalFocused()) {
@@ -219,7 +226,7 @@
   }
 
   function handleKeydown(e: KeyboardEvent) {
-    if (quickOpen || settingsOpen) return;
+    if (quickOpen || searchOpen || paletteOpen || settingsOpen) return;
 
     // Copy the selected sidebar path with ⌘C/Ctrl+C — unless the user is
     // copying selected text or typing in a form field (then let it pass).
@@ -264,6 +271,12 @@
 {#if quickOpen}
   <QuickOpen onClose={() => (quickOpen = false)} />
 {/if}
+{#if searchOpen}
+  <GlobalSearch onClose={() => (searchOpen = false)} />
+{/if}
+{#if paletteOpen}
+  <CommandPalette onRun={runAction} onClose={() => (paletteOpen = false)} />
+{/if}
 {#if settingsOpen}
   <Settings onClose={() => (settingsOpen = false)} />
 {/if}
@@ -273,6 +286,10 @@
 
 {#if drag.data}
   <div class="drag-ghost" style="left: {drag.x}px; top: {drag.y}px">{drag.data.label}</div>
+{/if}
+
+{#if ui.notice}
+  <div class="toast {ui.notice.kind}">{ui.notice.text}</div>
 {/if}
 
 {#snippet sidePanel(side: "left" | "right")}
@@ -299,10 +316,21 @@
         <div class="empty-hints">
           <span><kbd>⌘O</kbd> open folder</span>
           <span><kbd>⌘P</kbd> find file</span>
-          <span><kbd>⌘E</kbd> toggle view</span>
-          <span><kbd>⌘\</kbd> split</span>
+          <span><kbd>⌘⇧F</kbd> search</span>
+          <span><kbd>⌘⇧P</kbd> commands</span>
           <span><kbd>⌘,</kbd> settings</span>
         </div>
+        {#if settings.recentFolders.length}
+          <div class="recent-folders">
+            <div class="recent-title">Recent</div>
+            {#each settings.recentFolders.slice(0, 5) as p (p)}
+              <button class="recent-row" onclick={() => void workspace.setRoot(p)}>
+                <span class="recent-name">{p.split(/[/\\]/).filter(Boolean).pop()}</span>
+                <span class="recent-path">{p}</span>
+              </button>
+            {/each}
+          </div>
+        {/if}
       </div>
     {:else if groups.layout}
       <Layout node={groups.layout} />
