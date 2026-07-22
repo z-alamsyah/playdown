@@ -75,6 +75,44 @@
     }
   }
 
+  // Only the ACTIVE session holds a GPU renderer. Browsers cap concurrent
+  // WebGL contexts per page (~8–16) and silently drop the least-recently-used
+  // ones — with several terminal tabs, a hidden session's context got lost
+  // and its canvas came back stale/blank on activation. Hidden sessions fall
+  // back to xterm's DOM renderer (they're invisible anyway); the GPU renderer
+  // attaches on activation. WebGL is preferred because it GPU-scales the
+  // texture and stays aligned at fractional zoom; canvas is the fallback.
+  async function attachRenderer() {
+    if (renderer || !term) return;
+    try {
+      const { WebglAddon } = await import("@xterm/addon-webgl");
+      const webgl = new WebglAddon();
+      webgl.onContextLoss(() => {
+        webgl.dispose();
+        if (renderer === webgl) renderer = undefined; // re-attached on next activation
+      });
+      term.loadAddon(webgl);
+      renderer = webgl;
+    } catch {
+      try {
+        const { CanvasAddon } = await import("@xterm/addon-canvas");
+        renderer = new CanvasAddon();
+        term.loadAddon(renderer);
+      } catch (e) {
+        console.error("terminal renderer addon failed:", e);
+      }
+    }
+  }
+
+  function detachRenderer() {
+    try {
+      renderer?.dispose();
+    } catch {
+      /* already disposed (e.g. context loss) */
+    }
+    renderer = undefined;
+  }
+
   onMount(async () => {
     const [{ Terminal }, { FitAddon }] = await Promise.all([
       import("@xterm/xterm"),
@@ -101,28 +139,7 @@
     fit = new FitAddon();
     term.loadAddon(fit);
     term.open(el);
-    // WebGL renderer GPU-scales the whole texture — unlike the canvas/DOM
-    // renderers it doesn't round each cell to integer pixels, so it stays
-    // aligned at fractional zoom (webview zoom → fractional devicePixelRatio).
-    // Fall back to canvas, then the built-in DOM renderer.
-    try {
-      const { WebglAddon } = await import("@xterm/addon-webgl");
-      const webgl = new WebglAddon();
-      webgl.onContextLoss(() => {
-        webgl.dispose();
-        if (renderer === webgl) renderer = undefined;
-      });
-      term.loadAddon(webgl);
-      renderer = webgl;
-    } catch {
-      try {
-        const { CanvasAddon } = await import("@xterm/addon-canvas");
-        renderer = new CanvasAddon();
-        term.loadAddon(renderer);
-      } catch (e) {
-        console.error("terminal renderer addon failed:", e);
-      }
-    }
+    if (active) await attachRenderer();
 
     // Open the PTY only once the container has a real size, so the shell
     // starts at the correct width (no narrow initial layout).
@@ -161,13 +178,23 @@
     }
   });
 
-  // Refit + focus when this session becomes the active one.
+  // On activation: (re)attach the GPU renderer and force a full repaint —
+  // fit() alone is a no-op when dimensions didn't change, which left a stale
+  // canvas after visibility:hidden. On deactivation: release the renderer.
   $effect(() => {
-    if (active && ready) {
+    if (!ready) return;
+    if (active) {
       requestAnimationFrame(() => {
-        doFit();
-        term?.focus();
+        void (async () => {
+          await attachRenderer();
+          renderer?.clearTextureAtlas?.();
+          doFit();
+          if (term) term.refresh(0, Math.max(0, term.rows - 1));
+          term?.focus();
+        })();
       });
+    } else {
+      detachRenderer();
     }
   });
 
