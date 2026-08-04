@@ -54,6 +54,10 @@ class Settings {
   sidebarWidth = $state(250);
   jsonSortKeys = $state(false);
   recentFolders = $state<string[]>([]);
+  /** OS notification when a background agent needs input / finishes. */
+  agentNotifications = $state(true);
+  /** Command run by "New agent terminal" (command palette). */
+  agentCommand = $state("claude");
   loaded = $state(false);
 
   async load() {
@@ -82,6 +86,10 @@ class Settings {
       if (typeof jsonSortKeys === "boolean") this.jsonSortKeys = jsonSortKeys;
       const recentFolders = await store.get<string[]>("recentFolders");
       if (Array.isArray(recentFolders)) this.recentFolders = recentFolders;
+      const agentNotifications = await store.get<boolean>("agentNotifications");
+      if (typeof agentNotifications === "boolean") this.agentNotifications = agentNotifications;
+      const agentCommand = await store.get<string>("agentCommand");
+      if (typeof agentCommand === "string" && agentCommand.trim()) this.agentCommand = agentCommand;
       const terminalSide = await store.get<Dock>("terminalSide");
       const terminalOpen = await store.get<boolean>("terminalOpen");
       if (titlebarColor) this.titlebarColor = titlebarColor;
@@ -153,6 +161,16 @@ class Settings {
   async setJsonSortKeys(v: boolean) {
     this.jsonSortKeys = v;
     await this.persist("jsonSortKeys", v);
+  }
+
+  async setAgentNotifications(v: boolean) {
+    this.agentNotifications = v;
+    await this.persist("agentNotifications", v);
+  }
+
+  async setAgentCommand(cmd: string) {
+    this.agentCommand = cmd.trim() || "claude";
+    await this.persist("agentCommand", this.agentCommand);
   }
 
   /** Most-recent-first, deduped, capped list of opened workspace folders. */

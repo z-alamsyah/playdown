@@ -1531,6 +1531,88 @@ kbd {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+/* Agent-at-a-glance status dot (blocked / done / idle; working = spinner).
+   Idle is a hollow ring so any FILLED dot means "something happened". */
+.tt-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: transparent;
+  border: 1.5px solid var(--text-faint);
+  opacity: 0.6;
+}
+.tt-dot.blocked {
+  background: #f85149;
+  border-color: #f85149;
+  opacity: 1;
+  animation: dot-ping 1.1s ease-in-out infinite;
+}
+.tt-dot.done {
+  background: #3fb950;
+  border-color: #3fb950;
+  opacity: 1;
+  box-shadow: 0 0 5px rgba(63, 185, 80, 0.6);
+}
+/* Working: animated loading spinner (rotating arc), more noticeable than a dot */
+.tt-spin {
+  flex-shrink: 0;
+  color: var(--accent);
+  animation: tt-rotate 0.9s linear infinite;
+}
+@keyframes tt-rotate {
+  to { transform: rotate(360deg); }
+}
+@keyframes dot-ping {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(248, 81, 73, 0.55); }
+  70% { box-shadow: 0 0 0 4px rgba(248, 81, 73, 0); }
+}
+.terminal-tabs-strip .term-tab {
+  max-width: 220px;
+}
+
+/* Statusbar agent summary chip */
+.agent-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+.agent-chip .ac {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-family: var(--mono);
+}
+.agent-chip .ac.working {
+  color: var(--accent);
+}
+.agent-chip .ac.blocked {
+  color: #f85149;
+}
+.agent-chip .ac.done {
+  color: #3fb950;
+}
+
+/* Settings free-text input */
+.setting-input {
+  background: var(--bg-soft);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 13px;
+  font-family: var(--mono);
+  outline: none;
+  width: 200px;
+}
+.setting-input:focus {
+  border-color: var(--accent);
+}
+.muted-inline {
+  color: var(--text-faint);
+  font-size: 12px;
+}
 .tt-kill {
   font-size: 13px;
   line-height: 1;

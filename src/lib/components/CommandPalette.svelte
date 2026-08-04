@@ -3,6 +3,7 @@
   import { ACTIONS, keymap, prettyCombo, type Action } from "../stores/keymap.svelte";
   import { settings } from "../stores/settings.svelte";
   import { workspace } from "../stores/workspace.svelte";
+  import { terminal } from "../stores/terminal.svelte";
   import { closeFolder } from "../fileActions";
 
   let { onRun, onClose }: { onRun: (a: Action) => void; onClose: () => void } = $props();
@@ -27,6 +28,15 @@
       hint: prettyCombo(keymap.combo(a.id)),
       run: () => onRun(a.id),
     }));
+    cmds.push({
+      id: "newAgentTerminal",
+      label: `New agent terminal (${settings.agentCommand})`,
+      hint: "",
+      run: () => {
+        if (!settings.terminalOpen) void settings.setTerminalOpen(true);
+        terminal.create(settings.agentCommand);
+      },
+    });
     if (workspace.root) {
       cmds.push({ id: "closeFolder", label: "Close folder", hint: "", run: () => void closeFolder() });
     }

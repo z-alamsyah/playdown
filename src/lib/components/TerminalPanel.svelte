@@ -3,7 +3,21 @@
   import { invoke } from "@tauri-apps/api/core";
   import { terminal } from "../stores/terminal.svelte";
   import { settings } from "../stores/settings.svelte";
+  import { ui } from "../stores/ui.svelte";
   import TerminalView from "./TerminalView.svelte";
+
+  function promptRename(id: string, current: string) {
+    ui.showPrompt({
+      title: "Rename terminal",
+      value: current,
+      placeholder: "e.g. verifier",
+      confirmLabel: "Rename",
+      onSubmit: (name) => {
+        ui.closePrompt();
+        terminal.rename(id, name);
+      },
+    });
+  }
 
   let { hidden = false }: { hidden?: boolean } = $props();
 
@@ -40,14 +54,22 @@
   }
 </script>
 
-{#snippet tab(s: { id: string; label: string }, i: number)}
+{#snippet tab(s: import("../stores/terminal.svelte").TermSession, i: number)}
   <button
     class="term-tab"
     class:on={s.id === terminal.activeId}
-    title="{i + 1}: {s.label}"
+    title="{i + 1}: {terminal.displayName(s)} — {s.status} (double-click to rename)"
     onclick={() => terminal.setActive(s.id)}
+    ondblclick={() => promptRename(s.id, terminal.displayName(s))}
   >
-    <span class="tt-name">{i + 1}: {s.label}</span>
+    {#if s.status === "working"}
+      <svg class="tt-spin" viewBox="0 0 16 16" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+        <path d="M8 1.5a6.5 6.5 0 1 1-4.6 1.9" />
+      </svg>
+    {:else}
+      <span class="tt-dot {s.status}"></span>
+    {/if}
+    <span class="tt-name">{i + 1}: {terminal.displayName(s)}</span>
     <span
       class="tt-kill"
       role="button"

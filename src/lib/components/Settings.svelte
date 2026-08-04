@@ -105,6 +105,26 @@
     </section>
 
     <section>
+      <h3>Terminal &amp; agents</h3>
+      <div class="setting-row">
+        <span>Notify when a background agent needs input / finishes</span>
+        <div class="seg">
+          <button class:on={settings.agentNotifications} onclick={() => settings.setAgentNotifications(true)}>On</button>
+          <button class:on={!settings.agentNotifications} onclick={() => settings.setAgentNotifications(false)}>Off</button>
+        </div>
+      </div>
+      <div class="setting-row">
+        <span>Agent command <span class="muted-inline">(“New agent terminal”)</span></span>
+        <input
+          class="setting-input"
+          value={settings.agentCommand}
+          onchange={(e) => settings.setAgentCommand((e.currentTarget as HTMLInputElement).value)}
+          spellcheck="false"
+        />
+      </div>
+    </section>
+
+    <section>
       <h3>JSON</h3>
       <div class="setting-row">
         <span>Sort keys on format / minify</span>

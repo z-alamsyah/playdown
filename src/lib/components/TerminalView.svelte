@@ -154,7 +154,46 @@
       rows: term.rows,
     });
 
-    term.onData((d: string) => void invoke("term_write", { id, data: d }));
+    // "New agent terminal": run the preset command once the PTY is open.
+    // The PTY buffers input, so the shell picks it up at its first prompt.
+    const session = terminal.sessions.find((s) => s.id === id);
+    if (session?.initialCommand) {
+      void invoke("term_write", { id, data: session.initialCommand + "\r" });
+      session.initialCommand = undefined;
+    }
+
+    // onData carries more than keystrokes: mouse-tracking, focus reports, and
+    // the terminal's AUTO-REPLIES to TUI queries (cursor-position \x1b[..R,
+    // device attributes, …). Claude Code polls those constantly, so anything
+    // but a real keystroke must not count as "the user responded" — otherwise
+    // lastInput stays fresh forever and the echo-guard swallows all output
+    // (status pinned to idle). Whitelist real keys instead of blacklisting.
+    const isUserKeystroke = (d: string): boolean => {
+      if (!d.startsWith("\x1b")) return true; // printable chars, Enter, Ctrl-…
+      if (d.startsWith("\x1b[200~")) return true; // bracketed paste
+      if (/^\x1b(\[|O)[A-DHF]$/.test(d)) return true; // arrows / Home / End
+      if (/^\x1b[\[\]OP]/.test(d)) return false; // CSI/OSC/SS3/DCS = reports
+      return true; // Esc key itself / Alt-chords
+    };
+    term.onData((d: string) => {
+      if (isUserKeystroke(d)) terminal.noteInput(id);
+      void invoke("term_write", { id, data: d });
+    });
+    // Programs (Claude Code included) set the terminal title — show it in the tab.
+    term.onTitleChange((t: string) => terminal.setTitle(id, t));
+    // Real bell only: xterm's parser separates an actual BEL from the 0x07
+    // that terminates OSC sequences (title updates end with one — scanning
+    // raw bytes falsely marked every title change as "blocked").
+    term.onBell(() => terminal.noteBell(id));
+    // Agents announce fan-out in plain text ("✳ Waiting for 1 dynamic
+    // workflow to finish", "Running 3 agents…") and then go quiet — sniff the
+    // decoded stream for it so the status stays "working" through the wait.
+    // A rolling tail catches phrases split across PTY chunks.
+    const waitDecoder = new TextDecoder("utf-8", { fatal: false });
+    let textTail = "";
+    const WAIT_RE = /(waiting for|running) [^\n]{0,60}?(workflows?|agents?|tasks?|subagents?)/i;
+    const ANSI_RE = /\x1b\[[0-9;?]*[a-zA-Z]|\x1b\][^\x07\x1b]*(\x07|\x1b\\)?/g;
+
     unlistenOut = await listen<string>(`term://${id}`, (e) => {
       // Decode base64 → bytes; xterm decodes UTF-8 statefully (handles
       // multi-byte glyphs split across PTY read chunks).
@@ -162,6 +201,14 @@
       const bytes = new Uint8Array(bin.length);
       for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
       term.write(bytes);
+      terminal.noteOutput(id, bytes.length);
+
+      const plain = waitDecoder.decode(bytes, { stream: true }).replace(ANSI_RE, "");
+      textTail = (textTail + plain).slice(-240);
+      if (WAIT_RE.test(textTail)) {
+        terminal.noteWaiting(id);
+        textTail = ""; // consume the match so it doesn't re-trigger forever
+      }
     });
     unlistenExit = await listen(`term-exit://${id}`, () =>
       term.write("\r\n\x1b[90m[process exited]\x1b[0m\r\n"),

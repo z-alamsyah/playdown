@@ -11,6 +11,7 @@
     "dialog:default",
     "dialog:allow-confirm",
     "store:default",
-    "clipboard-manager:allow-write-text"
+    "clipboard-manager:allow-write-text",
+    "notification:default"
   ]
 }
