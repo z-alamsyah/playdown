@@ -23,6 +23,21 @@ impl TerminalState {
         s.writer.write_all(data).map_err(|e| e.to_string())?;
         s.writer.flush().map_err(|e| e.to_string())
     }
+
+    /// Resize a session's PTY (used by term_resize and the bridge — remote
+    /// clients resize to their own viewport, tmux-style "last client wins").
+    pub fn resize_pty(&self, id: &str, cols: u16, rows: u16) -> Result<(), String> {
+        let map = self.0.lock().unwrap();
+        let s = map.get(id).ok_or_else(|| format!("no session {id}"))?;
+        s.master
+            .resize(PtySize {
+                rows: rows.max(1),
+                cols: cols.max(1),
+                pixel_width: 0,
+                pixel_height: 0,
+            })
+            .map_err(|e| e.to_string())
+    }
 }
 
 fn default_shell_path() -> String {
@@ -131,17 +146,7 @@ pub fn term_resize(
     cols: u16,
     rows: u16,
 ) -> Result<(), String> {
-    let map = state.0.lock().unwrap();
-    if let Some(s) = map.get(&id) {
-        s.master
-            .resize(PtySize {
-                rows: rows.max(1),
-                cols: cols.max(1),
-                pixel_width: 0,
-                pixel_height: 0,
-            })
-            .map_err(|e| e.to_string())?;
-    }
+    let _ = state.resize_pty(&id, cols, rows); // late resize after close is harmless
     Ok(())
 }
 

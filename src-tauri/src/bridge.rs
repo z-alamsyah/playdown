@@ -200,6 +200,12 @@ async fn serve_client(
                             write.write_all(b"{\"ev\":\"error\",\"msg\":\"write failed\"}\n").await?;
                         }
                     }
+                    "resize" => {
+                        let (Some(id), Some(cols), Some(rows)) =
+                            (req["id"].as_str(), req["cols"].as_u64(), req["rows"].as_u64())
+                        else { continue };
+                        let _ = term.resize_pty(id, cols.min(500) as u16, rows.min(300) as u16);
+                    }
                     _ => {
                         write.write_all(b"{\"ev\":\"error\",\"msg\":\"unknown op\"}\n").await?;
                     }

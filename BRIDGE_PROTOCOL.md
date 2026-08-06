@@ -17,6 +17,7 @@ status) to companion processes — e.g. [`playdown-remote`](https://github.com/z
 | `sessions` | — | server replies a `sessions` snapshot |
 | `attach` | `id` | server replies `scrollback` for that session (~64KB replay) |
 | `input` | `id`, `data` (b64) | write bytes to the session's PTY |
+| `resize` | `id`, `cols`, `rows` | resize the PTY to the client's viewport (tmux-style "last client wins" — the desktop re-asserts its size when it next interacts) |
 
 ## Playdown → client
 
