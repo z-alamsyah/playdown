@@ -214,6 +214,15 @@
       term.write("\r\n\x1b[90m[process exited]\x1b[0m\r\n"),
     );
 
+    // Reclaim the PTY size on focus: a remote client (playdown-remote) may
+    // have resized the PTY to phone width ("last client wins"); clicking back
+    // into the terminal re-asserts the desktop's dimensions. No scrollToBottom
+    // here — focusing to select/read history must not jump the viewport.
+    // Same-size resizes are no-op ioctls, so this is free in the common case.
+    term.textarea?.addEventListener("focus", () => {
+      if (term) void invoke("term_resize", { id, cols: term.cols, rows: term.rows });
+    });
+
     ro = new ResizeObserver(() => scheduleFit());
     ro.observe(el);
     onWinResize = () => scheduleFit();
