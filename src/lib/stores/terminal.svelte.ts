@@ -4,6 +4,8 @@
 export type TermStatus = "idle" | "working" | "blocked" | "done";
 
 import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
+import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { settings } from "./settings.svelte";
 import { notifyNative } from "../tauri/notify";
 
@@ -258,3 +260,17 @@ class TerminalStore {
 }
 
 export const terminal = new TerminalStore();
+
+// Remote bridge tab management (see BRIDGE_PROTOCOL.md): companions ask to
+// open/close tabs; sessions are owned by the UI, so the requests land here.
+// "open" is handled by the main window only — the emit reaches every window,
+// and without the filter each one would spawn a tab. "close" is by unique id,
+// so exactly the window owning that session acts on it.
+void listen<{ agent: boolean }>("bridge://open", (e) => {
+  if (getCurrentWebviewWindow().label !== "main") return;
+  settings.setTerminalOpen(true);
+  terminal.create(e.payload.agent ? settings.agentCommand || "claude" : undefined);
+});
+void listen<string>("bridge://close", (e) => {
+  if (terminal.sessions.some((s) => s.id === e.payload)) terminal.close(e.payload);
+});

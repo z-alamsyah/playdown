@@ -18,6 +18,8 @@ status) to companion processes — e.g. [`playdown-remote`](https://github.com/z
 | `attach` | `id` | server replies `scrollback` for that session (~64KB replay) |
 | `input` | `id`, `data` (b64) | write bytes to the session's PTY |
 | `resize` | `id`, `cols`, `rows` | resize the PTY to the client's viewport (tmux-style "last client wins" — the desktop re-asserts its size when it next interacts) |
+| `open` | `agent`? (bool) | ask Playdown to open a new terminal tab (runs the user's agent preset when `agent` is true). A request to the UI — the next `sessions` event confirms it. |
+| `close` | `id` | ask Playdown to close that tab (kills the PTY, same as closing it in the UI) |
 
 ## Playdown → client
 

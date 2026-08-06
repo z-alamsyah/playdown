@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
-use tauri::State;
+use tauri::{Emitter, State};
 use tokio::sync::broadcast;
 
 use crate::terminal::TerminalState;
@@ -91,9 +91,11 @@ pub fn bridge_sync(hub: State<Hub>, sessions: Vec<SessionInfo>) {
 // tokio::net::UnixListener::from_std panics without a reactor.
 #[tauri::command]
 pub async fn bridge_start(
+    app: tauri::AppHandle,
     hub: State<'_, Hub>,
     term: State<'_, TerminalState>,
 ) -> Result<String, String> {
+    let _ = &app; // used on unix only
     #[cfg(not(unix))]
     {
         return Err("The remote bridge is only available on macOS/Linux for now.".into());
@@ -120,14 +122,16 @@ pub async fn bridge_start(
 
         let hub2: Hub = hub.inner().clone();
         let term2: TerminalState = term.inner().clone();
+        let app2 = app.clone();
         *server = Some(tauri::async_runtime::spawn(async move {
             loop {
                 match listener.accept().await {
                     Ok((stream, _)) => {
                         let hub3 = hub2.clone();
                         let term3 = term2.clone();
+                        let app3 = app2.clone();
                         tauri::async_runtime::spawn(async move {
-                            let _ = serve_client(stream, hub3, term3).await;
+                            let _ = serve_client(stream, hub3, term3, app3).await;
                         });
                     }
                     Err(_) => break,
@@ -153,6 +157,7 @@ async fn serve_client(
     stream: tokio::net::UnixStream,
     hub: Hub,
     term: TerminalState,
+    app: tauri::AppHandle,
 ) -> Result<(), std::io::Error> {
     use base64::Engine;
     use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
@@ -205,6 +210,19 @@ async fn serve_client(
                             (req["id"].as_str(), req["cols"].as_u64(), req["rows"].as_u64())
                         else { continue };
                         let _ = term.resize_pty(id, cols.min(500) as u16, rows.min(300) as u16);
+                    }
+                    // Tab management is a REQUEST to the frontend — sessions
+                    // are owned by the UI (xterm lifecycle, tab state), so the
+                    // bridge can't create them itself. The frontend confirms
+                    // via the next `sessions` event.
+                    "open" => {
+                        let agent = req["agent"].as_bool().unwrap_or(false);
+                        let _ = app.emit("bridge://open", json!({ "agent": agent }));
+                    }
+                    "close" => {
+                        if let Some(id) = req["id"].as_str() {
+                            let _ = app.emit("bridge://close", id);
+                        }
                     }
                     _ => {
                         write.write_all(b"{\"ev\":\"error\",\"msg\":\"unknown op\"}\n").await?;
