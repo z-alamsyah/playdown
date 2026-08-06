@@ -122,6 +122,16 @@
           spellcheck="false"
         />
       </div>
+      <div class="setting-row">
+        <span>Remote bridge <span class="muted-inline">(for playdown-remote)</span></span>
+        <div class="seg">
+          <button class:on={settings.remoteBridge} onclick={() => settings.setRemoteBridge(true)}>On</button>
+          <button class:on={!settings.remoteBridge} onclick={() => settings.setRemoteBridge(false)}>Off</button>
+        </div>
+      </div>
+      {#if settings.bridgeSocket}
+        <p class="muted small">Bridge socket: <code>{settings.bridgeSocket}</code> — install <code>playdown-remote</code> to access sessions from your phone.</p>
+      {/if}
     </section>
 
     <section>

@@ -1,5 +1,6 @@
 import { LazyStore } from "@tauri-apps/plugin-store";
 import { getCurrentWindow } from "@tauri-apps/api/window";
+import { invoke } from "@tauri-apps/api/core";
 import type { Theme, Side, TitlebarColor, Dock } from "../types";
 import type { SessionState } from "./groups.svelte";
 
@@ -58,6 +59,10 @@ class Settings {
   agentNotifications = $state(true);
   /** Command run by "New agent terminal" (command palette). */
   agentCommand = $state("claude");
+  /** Remote bridge (local socket for playdown-remote). See BRIDGE_PROTOCOL.md. */
+  remoteBridge = $state(false);
+  /** Socket path while the bridge is running (not persisted). */
+  bridgeSocket = $state<string | null>(null);
   loaded = $state(false);
 
   async load() {
@@ -90,6 +95,13 @@ class Settings {
       if (typeof agentNotifications === "boolean") this.agentNotifications = agentNotifications;
       const agentCommand = await store.get<string>("agentCommand");
       if (typeof agentCommand === "string" && agentCommand.trim()) this.agentCommand = agentCommand;
+      const remoteBridge = await store.get<boolean>("remoteBridge");
+      if (remoteBridge === true) {
+        this.remoteBridge = true;
+        void invoke<string>("bridge_start")
+          .then((p) => (this.bridgeSocket = p))
+          .catch((e) => console.error("bridge start failed:", e));
+      }
       const terminalSide = await store.get<Dock>("terminalSide");
       const terminalOpen = await store.get<boolean>("terminalOpen");
       if (titlebarColor) this.titlebarColor = titlebarColor;
@@ -171,6 +183,23 @@ class Settings {
   async setAgentCommand(cmd: string) {
     this.agentCommand = cmd.trim() || "claude";
     await this.persist("agentCommand", this.agentCommand);
+  }
+
+  async setRemoteBridge(v: boolean) {
+    this.remoteBridge = v;
+    try {
+      if (v) {
+        this.bridgeSocket = await invoke<string>("bridge_start");
+      } else {
+        await invoke("bridge_stop");
+        this.bridgeSocket = null;
+      }
+    } catch (e) {
+      console.error("bridge toggle failed:", e);
+      this.remoteBridge = false;
+      this.bridgeSocket = null;
+    }
+    await this.persist("remoteBridge", this.remoteBridge);
   }
 
   /** Most-recent-first, deduped, capped list of opened workspace folders. */

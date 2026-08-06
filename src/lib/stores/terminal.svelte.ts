@@ -3,6 +3,7 @@
  *  input), silence after work in a background tab = done. */
 export type TermStatus = "idle" | "working" | "blocked" | "done";
 
+import { invoke } from "@tauri-apps/api/core";
 import { settings } from "./settings.svelte";
 import { notifyNative } from "../tauri/notify";
 
@@ -78,6 +79,7 @@ class TerminalStore {
     });
     this.activeId = id;
     this.ensureTicker();
+    this.syncBridge();
     return id;
   }
 
@@ -89,6 +91,32 @@ class TerminalStore {
   rename(id: string, name: string) {
     const s = this.sessions.find((x) => x.id === id);
     if (s) s.custom = name.trim() || undefined;
+    this.syncBridge();
+  }
+
+  /** Single funnel for status changes — keeps the remote bridge in sync. */
+  private setStatus(s: TermSession, status: TermStatus) {
+    if (s.status === status) return;
+    s.status = status;
+    this.syncBridge();
+  }
+
+  /** Push the session list (names + statuses) to the Rust bridge, debounced.
+   *  No-op when the bridge is off (the command just updates a snapshot). */
+  private syncTimer: ReturnType<typeof setTimeout> | undefined;
+  private syncBridge() {
+    clearTimeout(this.syncTimer);
+    this.syncTimer = setTimeout(() => {
+      void invoke("bridge_sync", {
+        sessions: this.sessions.map((s) => ({
+          id: s.id,
+          label: s.label,
+          title: s.title ?? null,
+          custom: s.custom ?? null,
+          status: s.status,
+        })),
+      }).catch(() => {});
+    }, 50);
   }
 
   setActive(id: string) {
@@ -121,7 +149,7 @@ class TerminalStore {
     // a request for input — the work continues in subagents.
     if (!s || s.waitHold) return;
     const was = s.status;
-    s.status = "blocked";
+    this.setStatus(s, "blocked");
     // Surface it when the user isn't looking at this session.
     if (
       was !== "blocked" &&
@@ -137,7 +165,7 @@ class TerminalStore {
     const s = this.sessions.find((x) => x.id === id);
     if (!s) return;
     s.waitHold = true;
-    s.status = "working";
+    this.setStatus(s, "working");
     s.quietTicks = 0;
   }
 
@@ -147,12 +175,13 @@ class TerminalStore {
     if (!s) return;
     s.lastInput = Date.now();
     s.waitHold = false;
-    if (s.status === "blocked" || s.status === "done") s.status = "idle";
+    if (s.status === "blocked" || s.status === "done") this.setStatus(s, "idle");
   }
 
   setTitle(id: string, title: string) {
     const s = this.sessions.find((x) => x.id === id);
     if (s) s.title = title.trim() || undefined;
+    this.syncBridge();
   }
 
   /** 1s tick, rate hysteresis per session:
@@ -171,21 +200,22 @@ class TerminalStore {
           // output resuming (results streaming back) ends the hold.
           if (s.burstBytes >= 512) s.waitHold = false;
           else {
-            s.status = "working";
+            this.setStatus(s, "working");
             s.quietTicks = 0;
             s.burstBytes = 0;
             continue;
           }
         }
         if (s.status !== "blocked" && s.burstBytes > 2000) {
-          s.status = "working";
+          this.setStatus(s, "working");
           s.quietTicks = 0;
         } else if (s.status === "working") {
           if (s.burstBytes < 128) {
             if (++s.quietTicks >= 4) {
-              s.status = s.id === this.activeId ? "idle" : "done";
+              const next = s.id === this.activeId ? "idle" : "done";
+              this.setStatus(s, next);
               s.quietTicks = 0;
-              if (s.status === "done" && settings.agentNotifications && !document.hasFocus()) {
+              if (next === "done" && settings.agentNotifications && !document.hasFocus()) {
                 void notifyNative("Agent finished", this.displayName(s));
               }
             }
@@ -219,6 +249,7 @@ class TerminalStore {
       clearInterval(this.ticker);
       this.ticker = undefined;
     }
+    this.syncBridge();
   }
 
   ensureOne() {

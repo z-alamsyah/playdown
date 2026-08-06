@@ -2,7 +2,7 @@ use base64::Engine;
 use portable_pty::{native_pty_system, Child, CommandBuilder, MasterPty, PtySize};
 use std::collections::HashMap;
 use std::io::{Read, Write};
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 use tauri::{AppHandle, Emitter, State};
 
 struct Session {
@@ -11,8 +11,19 @@ struct Session {
     child: Box<dyn Child + Send + Sync>,
 }
 
-#[derive(Default)]
-pub struct TerminalState(Mutex<HashMap<String, Session>>);
+/// Arc-shared so the remote bridge's socket tasks can write to PTYs too.
+#[derive(Default, Clone)]
+pub struct TerminalState(Arc<Mutex<HashMap<String, Session>>>);
+
+impl TerminalState {
+    /// Write raw bytes to a session's PTY (used by term_write and the bridge).
+    pub fn write_bytes(&self, id: &str, data: &[u8]) -> Result<(), String> {
+        let mut map = self.0.lock().unwrap();
+        let s = map.get_mut(id).ok_or_else(|| format!("no session {id}"))?;
+        s.writer.write_all(data).map_err(|e| e.to_string())?;
+        s.writer.flush().map_err(|e| e.to_string())
+    }
+}
 
 fn default_shell_path() -> String {
     std::env::var("SHELL").unwrap_or_else(|_| {
@@ -36,6 +47,7 @@ pub fn default_shell() -> String {
 pub fn term_open(
     app: AppHandle,
     state: State<TerminalState>,
+    hub: State<crate::bridge::Hub>,
     id: String,
     cwd: Option<String>,
     cols: u16,
@@ -71,6 +83,8 @@ pub fn term_open(
     let writer = pair.master.take_writer().map_err(|e| e.to_string())?;
 
     let app2 = app.clone();
+    let hub2 = hub.inner().clone();
+    let sid = id.clone();
     let out_event = format!("term://{id}");
     let exit_event = format!("term-exit://{id}");
     std::thread::spawn(move || {
@@ -84,6 +98,8 @@ pub fn term_open(
                     // xterm.write(Uint8Array) decodes statefully across writes.
                     let b64 = base64::engine::general_purpose::STANDARD.encode(&buf[..n]);
                     let _ = app2.emit(&out_event, b64);
+                    // Tee to the remote bridge (scrollback + live stream).
+                    crate::bridge::push_output(&hub2, &sid, &buf[..n]);
                 }
             }
         }
@@ -103,11 +119,8 @@ pub fn term_open(
 
 #[tauri::command]
 pub fn term_write(state: State<TerminalState>, id: String, data: String) -> Result<(), String> {
-    let mut map = state.0.lock().unwrap();
-    if let Some(s) = map.get_mut(&id) {
-        s.writer.write_all(data.as_bytes()).map_err(|e| e.to_string())?;
-        s.writer.flush().map_err(|e| e.to_string())?;
-    }
+    // Ignore "no session" (a late write after close is harmless).
+    let _ = state.write_bytes(&id, data.as_bytes());
     Ok(())
 }
 
@@ -133,9 +146,14 @@ pub fn term_resize(
 }
 
 #[tauri::command]
-pub fn term_close(state: State<TerminalState>, id: String) -> Result<(), String> {
+pub fn term_close(
+    state: State<TerminalState>,
+    hub: State<crate::bridge::Hub>,
+    id: String,
+) -> Result<(), String> {
     if let Some(mut s) = state.0.lock().unwrap().remove(&id) {
         let _ = s.child.kill();
     }
+    crate::bridge::drop_session(&hub, &id);
     Ok(())
 }

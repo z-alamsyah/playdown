@@ -1,3 +1,4 @@
+mod bridge;
 mod terminal;
 
 use serde::Serialize;
@@ -538,6 +539,7 @@ pub fn run() {
         .plugin(tauri_plugin_notification::init())
         .manage(launch)
         .manage(terminal::TerminalState::default())
+        .manage(bridge::Hub::default())
         .manage(FsWatcher::default())
         .setup(|app| {
             setup_menu(app)?;
@@ -567,7 +569,10 @@ pub fn run() {
             terminal::term_open,
             terminal::term_write,
             terminal::term_resize,
-            terminal::term_close
+            terminal::term_close,
+            bridge::bridge_start,
+            bridge::bridge_stop,
+            bridge::bridge_sync
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
