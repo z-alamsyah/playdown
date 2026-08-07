@@ -29,6 +29,11 @@
 
   let qrTab = $state(0);
   let phoneError = $state("");
+  // Known at open time so the install note shows BEFORE the user toggles.
+  let companionInstalled = $state(true);
+  $effect(() => {
+    void invoke<boolean>("remote_companion_installed").then((v) => (companionInstalled = v));
+  });
   function toggleRemote(v: boolean) {
     return async () => {
       phoneError = "";
@@ -44,6 +49,7 @@
     phoneError = "";
     try {
       await settings.tryStartCompanion();
+      companionInstalled = !settings.companionMissing;
     } catch (e) {
       phoneError = String(e);
     }
@@ -164,6 +170,15 @@
       </div>
       {#if phoneError}
         <p class="muted small phone-error">{phoneError}</p>
+      {/if}
+      {#if !settings.remoteAccess && !companionInstalled}
+        <p class="muted small">
+          Phone access needs the <a href="https://github.com/z-alamsyah/playdown-remote" target="_blank" rel="noreferrer">playdown-remote</a> companion — install it first:
+        </p>
+        <p class="muted small qr-url">
+          <code>{INSTALL_CMD}</code>
+          <button class="btn-secondary" onclick={() => copyText(INSTALL_CMD)}>Copy</button>
+        </p>
       {/if}
       {#if settings.remoteAccess && settings.companionMissing}
         <p class="muted small">Bridge is on. For phone access, install the companion:</p>
