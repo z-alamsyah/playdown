@@ -24,18 +24,29 @@
     }
   }
 
+  const INSTALL_CMD =
+    "curl -fsSL https://raw.githubusercontent.com/z-alamsyah/playdown-remote/main/install.sh | sh";
+
   let qrTab = $state(0);
   let phoneError = $state("");
-  function togglePhone(v: boolean) {
+  function toggleRemote(v: boolean) {
     return async () => {
       phoneError = "";
       qrTab = 0;
       try {
-        await settings.setRemotePhone(v);
+        await settings.setRemoteAccess(v);
       } catch (e) {
         phoneError = String(e);
       }
     };
+  }
+  async function recheckCompanion() {
+    phoneError = "";
+    try {
+      await settings.tryStartCompanion();
+    } catch (e) {
+      phoneError = String(e);
+    }
   }
   async function copyText(text: string) {
     try {
@@ -145,26 +156,24 @@
         />
       </div>
       <div class="setting-row">
-        <span>Remote bridge <span class="muted-inline">(for playdown-remote)</span></span>
+        <span>Remote access <span class="muted-inline">(phone · Telegram · companions)</span></span>
         <div class="seg">
-          <button class:on={settings.remoteBridge} onclick={() => settings.setRemoteBridge(true)}>On</button>
-          <button class:on={!settings.remoteBridge} onclick={() => settings.setRemoteBridge(false)}>Off</button>
-        </div>
-      </div>
-      {#if settings.bridgeSocket}
-        <p class="muted small">Bridge socket: <code>{settings.bridgeSocket}</code></p>
-      {/if}
-      <div class="setting-row">
-        <span>Phone access <span class="muted-inline">(runs playdown-remote for you)</span></span>
-        <div class="seg">
-          <button class:on={settings.remotePhone} onclick={togglePhone(true)}>On</button>
-          <button class:on={!settings.remotePhone} onclick={togglePhone(false)}>Off</button>
+          <button class:on={settings.remoteAccess} onclick={toggleRemote(true)}>On</button>
+          <button class:on={!settings.remoteAccess} onclick={toggleRemote(false)}>Off</button>
         </div>
       </div>
       {#if phoneError}
         <p class="muted small phone-error">{phoneError}</p>
       {/if}
-      {#if settings.remotePhone && settings.companion}
+      {#if settings.remoteAccess && settings.companionMissing}
+        <p class="muted small">Bridge is on. For phone access, install the companion:</p>
+        <p class="muted small qr-url">
+          <code>{INSTALL_CMD}</code>
+          <button class="btn-secondary" onclick={() => copyText(INSTALL_CMD)}>Copy</button>
+          <button class="btn-secondary" onclick={recheckCompanion}>Check again</button>
+        </p>
+      {/if}
+      {#if settings.remoteAccess && settings.companion}
         <div class="setting-row">
           <span class="muted-inline">Scan from your phone</span>
           <div class="seg">
@@ -198,6 +207,9 @@
             spellcheck="false"
           />
         </div>
+      {/if}
+      {#if settings.remoteAccess && settings.bridgeSocket}
+        <p class="muted small">Bridge socket: <code>{settings.bridgeSocket}</code> — protocol in <code>BRIDGE_PROTOCOL.md</code></p>
       {/if}
     </section>
 

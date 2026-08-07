@@ -59,18 +59,20 @@ class Settings {
   agentNotifications = $state(true);
   /** Command run by "New agent terminal" (command palette). */
   agentCommand = $state("claude");
-  /** Remote bridge (local socket for playdown-remote). See BRIDGE_PROTOCOL.md. */
-  remoteBridge = $state(false);
+  /** Remote access: bridge socket + supervised playdown-remote companion
+   *  (phone terminal / Telegram). One switch — the bridge always comes up;
+   *  the companion joins when its binary is installed. */
+  remoteAccess = $state(false);
   /** Socket path while the bridge is running (not persisted). */
   bridgeSocket = $state<string | null>(null);
-  /** Phone access: Playdown supervises the playdown-remote binary. */
-  remotePhone = $state(false);
   /** Extra CLI args for the supervised companion (e.g. --telegram …). */
   remoteArgs = $state("");
   /** Ready info from the running companion (not persisted). */
   companion = $state<{
     urls: { url: string; kind: string; qr: string | null }[];
   } | null>(null);
+  /** Remote is on but the companion binary isn't installed (bridge-only). */
+  companionMissing = $state(false);
   loaded = $state(false);
 
   async load() {
@@ -105,18 +107,21 @@ class Settings {
       if (typeof agentCommand === "string" && agentCommand.trim()) this.agentCommand = agentCommand;
       const remoteArgs = await store.get<string>("remoteArgs");
       if (typeof remoteArgs === "string") this.remoteArgs = remoteArgs;
-      const remotePhone = await store.get<boolean>("remotePhone");
-      const remoteBridge = await store.get<boolean>("remoteBridge");
-      if (remoteBridge === true) {
-        this.remoteBridge = true;
+      // One flag since v0.14; migrate the two legacy toggles (bridge/phone).
+      const remoteAccess = await store.get<boolean>("remoteAccess");
+      const legacyBridge = await store.get<boolean>("remoteBridge");
+      const legacyPhone = await store.get<boolean>("remotePhone");
+      const remoteOn = remoteAccess === true || legacyBridge === true || legacyPhone === true;
+      if (remoteAccess === undefined && (legacyBridge !== undefined || legacyPhone !== undefined)) {
+        void this.persist("remoteAccess", remoteOn);
+      }
+      if (remoteOn) {
+        this.remoteAccess = true;
         void invoke<string>("bridge_start")
           .then((p) => {
             this.bridgeSocket = p;
-            // Companion needs the socket up first.
-            if (remotePhone === true) {
-              this.remotePhone = true;
-              void this.startCompanion().catch((e) => console.error("companion autostart failed:", e));
-            }
+            // Companion needs the socket up first; a missing binary is fine.
+            void this.tryStartCompanion().catch((e) => console.error("companion autostart failed:", e));
           })
           .catch((e) => console.error("bridge start failed:", e));
       }
@@ -203,27 +208,17 @@ class Settings {
     await this.persist("agentCommand", this.agentCommand);
   }
 
-  async setRemoteBridge(v: boolean) {
-    this.remoteBridge = v;
-    try {
-      if (v) {
-        this.bridgeSocket = await invoke<string>("bridge_start");
-      } else {
-        // The companion is useless without the bridge — stop it too.
-        if (this.remotePhone) await this.setRemotePhone(false);
-        await invoke("bridge_stop");
-        this.bridgeSocket = null;
-      }
-    } catch (e) {
-      console.error("bridge toggle failed:", e);
-      this.remoteBridge = false;
-      this.bridgeSocket = null;
+  /** Start the companion if its binary is installed; a missing binary is not
+   *  an error (bridge stays useful for manual/custom companions). Throws on
+   *  real start failures (port busy, bad args). */
+  async tryStartCompanion() {
+    this.companionMissing = false;
+    const installed = await invoke<boolean>("remote_companion_installed");
+    if (!installed) {
+      this.companionMissing = true;
+      this.companion = null;
+      return;
     }
-    await this.persist("remoteBridge", this.remoteBridge);
-  }
-
-  /** Spawn the supervised companion and cache its URLs/QRs. Throws on failure. */
-  async startCompanion() {
     const line = await invoke<string>("remote_companion_start", {
       extraArgs: this.remoteArgs.trim() || null,
     });
@@ -231,24 +226,30 @@ class Settings {
     this.companion = { urls: info.urls ?? [] };
   }
 
-  async setRemotePhone(v: boolean) {
+  async setRemoteAccess(v: boolean) {
     if (v) {
-      // Companion talks to the bridge socket — make sure it's up first.
-      if (!this.remoteBridge) await this.setRemoteBridge(true);
-      if (!this.remoteBridge) throw new Error("Remote bridge failed to start.");
-      await this.startCompanion(); // throws → toggle stays off
-      this.remotePhone = true;
+      this.bridgeSocket = await invoke<string>("bridge_start"); // throws → stays off
+      this.remoteAccess = true;
+      await this.persist("remoteAccess", true);
+      await this.tryStartCompanion(); // may throw AFTER persisting — bridge is up either way
     } else {
-      this.remotePhone = false;
+      this.remoteAccess = false;
       this.companion = null;
+      this.companionMissing = false;
       await invoke("remote_companion_stop").catch(() => {});
+      await invoke("bridge_stop").catch(() => {});
+      this.bridgeSocket = null;
+      await this.persist("remoteAccess", false);
     }
-    await this.persist("remotePhone", this.remotePhone);
   }
 
   async setRemoteArgs(v: string) {
     this.remoteArgs = v;
     await this.persist("remoteArgs", v);
+    // Apply live: the start command has restart semantics.
+    if (this.remoteAccess && this.companion) {
+      await this.tryStartCompanion();
+    }
   }
 
   /** Most-recent-first, deduped, capped list of opened workspace folders. */
