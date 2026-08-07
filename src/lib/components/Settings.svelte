@@ -24,6 +24,28 @@
     }
   }
 
+  let qrTab = $state(0);
+  let phoneError = $state("");
+  function togglePhone(v: boolean) {
+    return async () => {
+      phoneError = "";
+      qrTab = 0;
+      try {
+        await settings.setRemotePhone(v);
+      } catch (e) {
+        phoneError = String(e);
+      }
+    };
+  }
+  async function copyText(text: string) {
+    try {
+      const { writeText } = await import("@tauri-apps/plugin-clipboard-manager");
+      await writeText(text);
+    } catch {
+      /* clipboard unavailable */
+    }
+  }
+
   let { onClose }: { onClose: () => void } = $props();
 
   let capturing = $state<Action | null>(null);
@@ -130,7 +152,52 @@
         </div>
       </div>
       {#if settings.bridgeSocket}
-        <p class="muted small">Bridge socket: <code>{settings.bridgeSocket}</code> — install <code>playdown-remote</code> to access sessions from your phone.</p>
+        <p class="muted small">Bridge socket: <code>{settings.bridgeSocket}</code></p>
+      {/if}
+      <div class="setting-row">
+        <span>Phone access <span class="muted-inline">(runs playdown-remote for you)</span></span>
+        <div class="seg">
+          <button class:on={settings.remotePhone} onclick={togglePhone(true)}>On</button>
+          <button class:on={!settings.remotePhone} onclick={togglePhone(false)}>Off</button>
+        </div>
+      </div>
+      {#if phoneError}
+        <p class="muted small phone-error">{phoneError}</p>
+      {/if}
+      {#if settings.remotePhone && settings.companion}
+        <div class="setting-row">
+          <span class="muted-inline">Scan from your phone</span>
+          <div class="seg">
+            {#each settings.companion.urls as u, i (u.url)}
+              <button class:on={qrTab === i} onclick={() => (qrTab = i)}>
+                {u.kind === "tailscale" ? "Tailscale" : "Wi-Fi"}
+              </button>
+            {/each}
+          </div>
+        </div>
+        {#if settings.companion.urls[qrTab]}
+          {@const cur = settings.companion.urls[qrTab]}
+          {#if cur.qr}<pre class="qr">{cur.qr}</pre>{/if}
+          <p class="muted small qr-url">
+            <code>{cur.url}</code>
+            <button class="btn-secondary" onclick={() => copyText(cur.url)}>Copy</button>
+          </p>
+          <p class="muted small">
+            {cur.kind === "tailscale"
+              ? "Works from anywhere — both devices on Tailscale."
+              : "Phone must be on the same Wi-Fi."} New link on every start.
+          </p>
+        {/if}
+        <div class="setting-row">
+          <span>Companion arguments <span class="muted-inline">(optional, e.g. --telegram …)</span></span>
+          <input
+            class="setting-input"
+            value={settings.remoteArgs}
+            onchange={(e) => settings.setRemoteArgs((e.currentTarget as HTMLInputElement).value)}
+            placeholder="--view-only"
+            spellcheck="false"
+          />
+        </div>
       {/if}
     </section>
 

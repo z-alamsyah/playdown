@@ -63,6 +63,14 @@ class Settings {
   remoteBridge = $state(false);
   /** Socket path while the bridge is running (not persisted). */
   bridgeSocket = $state<string | null>(null);
+  /** Phone access: Playdown supervises the playdown-remote binary. */
+  remotePhone = $state(false);
+  /** Extra CLI args for the supervised companion (e.g. --telegram …). */
+  remoteArgs = $state("");
+  /** Ready info from the running companion (not persisted). */
+  companion = $state<{
+    urls: { url: string; kind: string; qr: string | null }[];
+  } | null>(null);
   loaded = $state(false);
 
   async load() {
@@ -95,11 +103,21 @@ class Settings {
       if (typeof agentNotifications === "boolean") this.agentNotifications = agentNotifications;
       const agentCommand = await store.get<string>("agentCommand");
       if (typeof agentCommand === "string" && agentCommand.trim()) this.agentCommand = agentCommand;
+      const remoteArgs = await store.get<string>("remoteArgs");
+      if (typeof remoteArgs === "string") this.remoteArgs = remoteArgs;
+      const remotePhone = await store.get<boolean>("remotePhone");
       const remoteBridge = await store.get<boolean>("remoteBridge");
       if (remoteBridge === true) {
         this.remoteBridge = true;
         void invoke<string>("bridge_start")
-          .then((p) => (this.bridgeSocket = p))
+          .then((p) => {
+            this.bridgeSocket = p;
+            // Companion needs the socket up first.
+            if (remotePhone === true) {
+              this.remotePhone = true;
+              void this.startCompanion().catch((e) => console.error("companion autostart failed:", e));
+            }
+          })
           .catch((e) => console.error("bridge start failed:", e));
       }
       const terminalSide = await store.get<Dock>("terminalSide");
@@ -191,6 +209,8 @@ class Settings {
       if (v) {
         this.bridgeSocket = await invoke<string>("bridge_start");
       } else {
+        // The companion is useless without the bridge — stop it too.
+        if (this.remotePhone) await this.setRemotePhone(false);
         await invoke("bridge_stop");
         this.bridgeSocket = null;
       }
@@ -200,6 +220,35 @@ class Settings {
       this.bridgeSocket = null;
     }
     await this.persist("remoteBridge", this.remoteBridge);
+  }
+
+  /** Spawn the supervised companion and cache its URLs/QRs. Throws on failure. */
+  async startCompanion() {
+    const line = await invoke<string>("remote_companion_start", {
+      extraArgs: this.remoteArgs.trim() || null,
+    });
+    const info = JSON.parse(line);
+    this.companion = { urls: info.urls ?? [] };
+  }
+
+  async setRemotePhone(v: boolean) {
+    if (v) {
+      // Companion talks to the bridge socket — make sure it's up first.
+      if (!this.remoteBridge) await this.setRemoteBridge(true);
+      if (!this.remoteBridge) throw new Error("Remote bridge failed to start.");
+      await this.startCompanion(); // throws → toggle stays off
+      this.remotePhone = true;
+    } else {
+      this.remotePhone = false;
+      this.companion = null;
+      await invoke("remote_companion_stop").catch(() => {});
+    }
+    await this.persist("remotePhone", this.remotePhone);
+  }
+
+  async setRemoteArgs(v: string) {
+    this.remoteArgs = v;
+    await this.persist("remoteArgs", v);
   }
 
   /** Most-recent-first, deduped, capped list of opened workspace folders. */

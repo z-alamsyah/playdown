@@ -1,4 +1,5 @@
 mod bridge;
+mod remote;
 mod terminal;
 
 use serde::Serialize;
@@ -540,6 +541,7 @@ pub fn run() {
         .manage(launch)
         .manage(terminal::TerminalState::default())
         .manage(bridge::Hub::default())
+        .manage(remote::Companion::default())
         .manage(FsWatcher::default())
         .setup(|app| {
             setup_menu(app)?;
@@ -572,8 +574,19 @@ pub fn run() {
             terminal::term_close,
             bridge::bridge_start,
             bridge::bridge_stop,
-            bridge::bridge_sync
+            bridge::bridge_sync,
+            remote::remote_companion_installed,
+            remote::remote_companion_running,
+            remote::remote_companion_start,
+            remote::remote_companion_stop
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while running tauri application")
+        .run(|app, event| {
+            // Kill the supervised companion on quit (its own parent watchdog
+            // covers crashes) — core value: no zombie processes.
+            if let tauri::RunEvent::Exit = event {
+                remote::shutdown(&app.state::<remote::Companion>());
+            }
+        });
 }

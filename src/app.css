@@ -1609,6 +1609,34 @@ kbd {
 .setting-input:focus {
   border-color: var(--accent);
 }
+/* Phone-access QR (Settings). Unicode half-block art from playdown-remote —
+   fixed dark palette so it stays scannable in both themes. */
+.qr {
+  font-family: var(--mono);
+  font-size: 8px;
+  line-height: 1;
+  letter-spacing: 0;
+  background: #0d1117;
+  color: #ffffff;
+  padding: 10px 14px;
+  border-radius: 8px;
+  width: fit-content;
+  margin: 10px auto;
+  user-select: none;
+}
+.qr-url {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: center;
+}
+.qr-url code {
+  overflow-wrap: anywhere;
+}
+.phone-error {
+  color: var(--danger, #f85149);
+  white-space: pre-wrap;
+}
 .muted-inline {
   color: var(--text-faint);
   font-size: 12px;
