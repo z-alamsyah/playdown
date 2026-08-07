@@ -211,6 +211,7 @@
         <div class="brand"><img class="dot" src="logo.png" alt="" style="background:none;object-fit:cover" /> Playdown</div>
         <div class="nav-links">
           <a href="#features">Features</a>
+          <a href="#remote">Remote</a>
           <a href="#install">Install</a>
           <a href="https://github.com/z-alamsyah/playdown">GitHub</a>
           <a class="nav-cta" href="#install">Download</a>
@@ -349,8 +350,35 @@
           <div class="feat"><div class="ico">🎨</div><h3>GitHub look</h3><p>Primer dark/light themes, GitHub-rendered markdown, material-style file icons.</p></div>
           <div class="feat"><div class="ico">🔡</div><h3>JSON tools</h3><p>Format <kbd>⇧⌥F</kbd>, minify, sort keys, parse errors pointed at the exact line.</p></div>
           <div class="feat"><div class="ico">⌨️</div><h3><code>playdown</code> CLI</h3><p><code>playdown .</code> opens any folder from your shell; <code>--update</code> pulls the latest release.</p></div>
+          <div class="feat"><div class="ico">📱</div><h3>Phone remote</h3><p>Optional <a href="https://github.com/z-alamsyah/playdown-remote">companion</a> streams your terminal tabs to your phone — QR pairing, Tailscale-friendly, Telegram alerts.</p></div>
           <div class="feat"><div class="ico">🪶</div><h3>Genuinely light</h3><p>Tauri + system WebView. No bundled Chromium. ~5 MB app, ~70 MB RAM.</p></div>
           <div class="feat"><div class="ico">🆓</div><h3>No sign-in, free forever</h3><p>No account, no telemetry, no subscription. Open source (MIT) — just download and go.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="block" id="remote">
+      <div class="wrap">
+        <div class="section-head">
+          <h2>Leave the desk. Keep the agents.</h2>
+          <p>The optional <a href="https://github.com/z-alamsyah/playdown-remote">playdown-remote</a> companion puts your terminal sessions on your phone — no relay, no cloud, no account.</p>
+        </div>
+        <div class="loop">
+          <div class="loop-step">
+            <div class="n">1</div>
+            <h3>Pair by QR</h3>
+            <p>Toggle <b>Remote bridge</b> in Settings, run <code style="font-family:var(--mono)">playdown-remote</code>, scan the QR — same Wi-Fi, or anywhere via <b>Tailscale</b> (direct WireGuard, no middleman).</p>
+          </div>
+          <div class="loop-step">
+            <div class="n">2</div>
+            <h3>Drive from your phone</h3>
+            <p>Sessions grouped by agent status — <b>needs&nbsp;you</b> / working / done — tap one for a mobile terminal with a TUI-friendly key bar. Open and close tabs remotely.</p>
+          </div>
+          <div class="loop-step">
+            <div class="n">3</div>
+            <h3>Or just get pinged</h3>
+            <p>Hook up your own <b>Telegram bot</b>: blocked/done alerts with the agent's actual question and inline <b>Enter / Esc / 1 / 2 / 3</b> keys to answer from the notification.</p>
+          </div>
         </div>
       </div>
     </section>

@@ -79,11 +79,35 @@ pnpm tauri build      # bundle for your OS
 - 🖼️ **Image preview** — png/jpg/gif/webp/svg/bmp/ico/avif rendered inline
 - 🗃️ **File ops** — new file / new folder (created inside the selected folder), rename (right-click or `Enter`), delete to Trash, copy full / relative path (`⌘C`), and **drag-and-drop to move** files/folders in the sidebar
 - 🖥️ **Built-in terminal** — multi-session (new / switch / kill), **dockable bottom or right (side-by-side with the editor)**, resizable, `` Ctrl+` `` to toggle (xterm.js + JuliaMono lazy-loaded — zero idle cost)
+- 📱 **Remote access** — drive your terminal tabs (and the agents in them) from your phone or Telegram via the optional [playdown-remote](https://github.com/z-alamsyah/playdown-remote) companion — see [Remote access](#remote-access-phone--telegram)
 - ⌨️ **`playdown` CLI** — `playdown .` opens a folder from your terminal; `playdown --update` pulls the latest release; `playdown --version` / `--help` (install from Settings → Command line)
 - 🔍 **Zoom** — `⌘=` / `⌘-` / `⌘0` or trackpad pinch
 - ⚙️ **Settings** (`⌘,`) — theme, sidebar side (left/right), zoom, and **fully rebindable shortcuts**
 - 🌗 **Dark / light themes**, window state, and full session (layout + open tabs) persisted across restarts
 - 🆓 **No sign-in, free forever** — no account, no telemetry, no subscription. Open source (MIT)
+
+## Remote access (phone + Telegram)
+
+Left the desk while an agent is working? The optional
+[**playdown-remote**](https://github.com/z-alamsyah/playdown-remote) companion
+puts your Playdown terminal sessions on your phone — no relay, no cloud, no
+account:
+
+1. Playdown → **Settings → Terminal & agents → Remote bridge: On**
+2. ```bash
+   curl -fsSL https://raw.githubusercontent.com/z-alamsyah/playdown-remote/main/install.sh | sh
+   playdown-remote
+   ```
+3. Scan the QR — same Wi-Fi, or anywhere via [Tailscale](https://tailscale.com).
+
+You get a mobile web terminal (sessions grouped by agent status — needs-you /
+working / done / idle — with a TUI-friendly key bar), and an optional
+**Telegram bot** (`--telegram <token>`) that pings you when an agent blocks or
+finishes, with inline Enter/Esc/1/2/3 keys to answer from the notification.
+
+Everything speaks a documented local-socket protocol
+([`BRIDGE_PROTOCOL.md`](BRIDGE_PROTOCOL.md)) — build your own companion if you
+like. Requires Playdown ≥ 0.13.0 (macOS/Linux).
 
 ## Keyboard shortcuts
 
