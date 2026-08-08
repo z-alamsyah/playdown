@@ -27,13 +27,28 @@ pub struct SessionInfo {
     pub status: String,
 }
 
+/// Per-session replay state: output ring + tracked DEC private modes.
+///
+/// TUIs enable mouse tracking / the alternate screen ONCE at startup; when a
+/// remote client attaches later, those DECSET sequences have usually scrolled
+/// out of the 64KB ring, so its xterm would never learn the modes (taps not
+/// forwarded as clicks, scroll misrouted). We track `ESC [ ? n h/l` in the
+/// stream and append a synthetic restore suffix to every attach replay.
+#[derive(Default)]
+struct SessionBuf {
+    data: Vec<u8>,
+    modes: std::collections::BTreeMap<u16, bool>,
+    /// Tail of the previous chunk — a sequence can split across reads.
+    carry: Vec<u8>,
+}
+
 pub struct BridgeHub {
     /// Live PTY output, tee'd from the reader threads: (session id, bytes).
     output_tx: broadcast::Sender<(String, Vec<u8>)>,
     /// Pre-serialized JSON-line events (session list changes).
     event_tx: broadcast::Sender<String>,
     sessions: Mutex<Vec<SessionInfo>>,
-    scrollback: Mutex<HashMap<String, Vec<u8>>>,
+    scrollback: Mutex<HashMap<String, SessionBuf>>,
     server: Mutex<Option<tauri::async_runtime::JoinHandle<()>>>,
 }
 
@@ -51,15 +66,77 @@ impl Default for BridgeHub {
 
 pub type Hub = Arc<BridgeHub>;
 
+/// Scan for DEC private mode changes (`ESC [ ? n(;n)* h|l`) and record them.
+fn scan_modes(buf: &[u8], modes: &mut std::collections::BTreeMap<u16, bool>) {
+    let mut i = 0;
+    while i + 3 < buf.len() {
+        if buf[i] == 0x1b && buf[i + 1] == b'[' && buf[i + 2] == b'?' {
+            let mut j = i + 3;
+            let mut params: Vec<u16> = Vec::new();
+            let mut cur: u32 = 0;
+            let mut has = false;
+            while j < buf.len() {
+                match buf[j] {
+                    b'0'..=b'9' => {
+                        cur = (cur * 10 + (buf[j] - b'0') as u32).min(65535);
+                        has = true;
+                        j += 1;
+                    }
+                    b';' => {
+                        if has {
+                            params.push(cur as u16);
+                        }
+                        cur = 0;
+                        has = false;
+                        j += 1;
+                    }
+                    b'h' | b'l' => {
+                        if has {
+                            params.push(cur as u16);
+                        }
+                        let v = buf[j] == b'h';
+                        for p in &params {
+                            modes.insert(*p, v);
+                        }
+                        i = j;
+                        break;
+                    }
+                    _ => break,
+                }
+            }
+        }
+        i += 1;
+    }
+}
+
+/// Synthetic sequence restoring the tracked mode state (diffs from defaults).
+fn mode_restore(modes: &std::collections::BTreeMap<u16, bool>) -> Vec<u8> {
+    let mut out = Vec::new();
+    for (p, v) in modes {
+        let default_on = matches!(p, 7 | 12 | 25); // wrap, blink, cursor visible
+        if *v != default_on {
+            out.extend_from_slice(format!("\x1b[?{}{}", p, if *v { 'h' } else { 'l' }).as_bytes());
+        }
+    }
+    out
+}
+
 /// Called from the PTY reader threads (sync context) for every chunk.
 pub fn push_output(hub: &Hub, id: &str, data: &[u8]) {
     {
         let mut sb = hub.scrollback.lock().unwrap();
         let buf = sb.entry(id.to_string()).or_default();
-        buf.extend_from_slice(data);
-        if buf.len() > SCROLLBACK_CAP {
-            let excess = buf.len() - SCROLLBACK_CAP;
-            buf.drain(..excess);
+        // Mode scan over carry+chunk so split sequences are still seen.
+        let mut scan = std::mem::take(&mut buf.carry);
+        scan.extend_from_slice(data);
+        scan_modes(&scan, &mut buf.modes);
+        let keep = scan.len().min(16);
+        buf.carry = scan[scan.len() - keep..].to_vec();
+
+        buf.data.extend_from_slice(data);
+        if buf.data.len() > SCROLLBACK_CAP {
+            let excess = buf.data.len() - SCROLLBACK_CAP;
+            buf.data.drain(..excess);
         }
     }
     let _ = hub.output_tx.send((id.to_string(), data.to_vec()));
@@ -193,7 +270,21 @@ async fn serve_client(
                     }
                     "attach" => {
                         if let Some(id) = req["id"].as_str() {
-                            let data = hub.scrollback.lock().unwrap().get(id).cloned().unwrap_or_default();
+                            // Ring + synthetic mode restore: the client's
+                            // terminal ends up with the app's CURRENT modes
+                            // (mouse tracking, alt screen, …) even when the
+                            // DECSETs scrolled out of the ring long ago.
+                            let data = {
+                                let sb = hub.scrollback.lock().unwrap();
+                                match sb.get(id) {
+                                    Some(buf) => {
+                                        let mut d = buf.data.clone();
+                                        d.extend_from_slice(&mode_restore(&buf.modes));
+                                        d
+                                    }
+                                    None => Vec::new(),
+                                }
+                            };
                             let ev = json!({ "ev": "scrollback", "id": id, "data": b64.encode(&data) });
                             write.write_all(format!("{ev}\n").as_bytes()).await?;
                         }
@@ -249,4 +340,48 @@ async fn serve_client(
         }
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn tracks_set_and_reset_across_chunks() {
+        let mut m = std::collections::BTreeMap::new();
+        // mouse + SGR + alt screen on, then bracketed paste on
+        scan_modes(b"\x1b[?1000h\x1b[?1006h\x1b[?1049h", &mut m);
+        scan_modes(b"\x1b[?2004h", &mut m);
+        // sequence split across chunks: ESC [ ? 10  |  02 h
+        let mut scan = b"\x1b[?10".to_vec();
+        scan.extend_from_slice(b"02h");
+        scan_modes(&scan, &mut m);
+        // later the app turns mouse off
+        scan_modes(b"\x1b[?1000l", &mut m);
+        assert_eq!(m.get(&1000), Some(&false));
+        assert_eq!(m.get(&1002), Some(&true));
+        assert_eq!(m.get(&1006), Some(&true));
+        assert_eq!(m.get(&1049), Some(&true));
+        assert_eq!(m.get(&2004), Some(&true));
+    }
+
+    #[test]
+    fn multi_param_and_restore_diffs_only() {
+        let mut m = std::collections::BTreeMap::new();
+        scan_modes(b"\x1b[?1002;1006h\x1b[?25l", &mut m);
+        let out = String::from_utf8(mode_restore(&m)).unwrap();
+        assert!(out.contains("\x1b[?1002h"));
+        assert!(out.contains("\x1b[?1006h"));
+        assert!(out.contains("\x1b[?25l")); // cursor hidden differs from default
+        // 1000 was never seen — nothing emitted for it
+        assert!(!out.contains("1000"));
+    }
+
+    #[test]
+    fn default_states_not_emitted() {
+        let mut m = std::collections::BTreeMap::new();
+        scan_modes(b"\x1b[?25h\x1b[?1000h\x1b[?1000l", &mut m);
+        let out = String::from_utf8(mode_restore(&m)).unwrap();
+        assert!(out.is_empty(), "back-to-default modes must emit nothing, got {out:?}");
+    }
 }
