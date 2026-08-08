@@ -17,6 +17,7 @@
   let unlistenExit: UnlistenFn | undefined;
   let ro: ResizeObserver | undefined;
   let onWinResize: (() => void) | undefined;
+  let onWinFocus: (() => void) | undefined;
   let fitTimer: ReturnType<typeof setTimeout> | undefined;
   let ready = $state(false);
 
@@ -175,8 +176,20 @@
       if (/^\x1b[\[\]OP]/.test(d)) return false; // CSI/OSC/SS3/DCS = reports
       return true; // Esc key itself / Alt-chords
     };
+    // Reclaim throttle: a remote client (playdown-remote) may have resized
+    // the PTY to phone width; typing here is the strongest "the desktop took
+    // over" signal — re-assert our size at most every 2s (same-size resizes
+    // are no-op ioctls, so this is free once reclaimed).
+    let lastAssert = 0;
     term.onData((d: string) => {
-      if (isUserKeystroke(d)) terminal.noteInput(id);
+      if (isUserKeystroke(d)) {
+        terminal.noteInput(id);
+        const now = Date.now();
+        if (now - lastAssert > 2000) {
+          lastAssert = now;
+          void invoke("term_resize", { id, cols: term.cols, rows: term.rows });
+        }
+      }
       void invoke("term_write", { id, data: d });
     });
     // Programs (Claude Code included) set the terminal title — show it in the tab.
@@ -219,9 +232,14 @@
     // into the terminal re-asserts the desktop's dimensions. No scrollToBottom
     // here — focusing to select/read history must not jump the viewport.
     // Same-size resizes are no-op ioctls, so this is free in the common case.
-    term.textarea?.addEventListener("focus", () => {
-      if (term) void invoke("term_resize", { id, cols: term.cols, rows: term.rows });
-    });
+    const reclaim = () => {
+      if (term && active) void invoke("term_resize", { id, cols: term.cols, rows: term.rows });
+    };
+    term.textarea?.addEventListener("focus", reclaim);
+    // Also on app focus — returning to the laptop without re-focusing the
+    // textarea (it never blurred) must still take the PTY back.
+    window.addEventListener("focus", reclaim);
+    onWinFocus = reclaim;
 
     ro = new ResizeObserver(() => scheduleFit());
     ro.observe(el);
@@ -305,6 +323,7 @@
     ro?.disconnect();
     clearTimeout(fitTimer);
     if (onWinResize) window.removeEventListener("resize", onWinResize);
+    if (onWinFocus) window.removeEventListener("focus", onWinFocus);
     void invoke("term_close", { id }).catch(() => {});
     term?.dispose();
   });
