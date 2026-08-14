@@ -7,8 +7,7 @@
 
 A lightweight **workbench for agentic workflows**: the markdown your agents read and write, and the terminals they run in — side by side. Works with **any coding agent**, because Playdown remotes the terminal, not the harness.
 
-<!-- TODO: hero demo GIF here (assets/demo.gif) -->
-![Playdown demo](docs/assets/demo.gif)
+![Playdown demo — annotate a PRD, send the review to a coding agent in the built-in terminal, watch it work](docs/assets/demo.gif)
 
 ## What is this?
 
