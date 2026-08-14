@@ -3,10 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Playdown — a markdown editor without the IDE tax</title>
-    <meta name="description" content="A ~5 MB cross-platform markdown editor & viewer. Splits, outline, JSON, images, themes — opens before your code editor finishes loading." />
-    <meta property="og:title" content="Playdown — your agents, docs & terminal in one light window" />
-    <meta property="og:description" content="A ~5 MB markdown editor with a real built-in terminal. Annotate RFCs, send the feedback to Claude Code, watch the changes land — all in one light window." />
+    <title>Playdown — the lightweight workbench for agentic workflows</title>
+    <meta name="description" content="Markdown and terminals side by side: edit your PRDs, skills & manifests, run any coding agent in built-in terminals, supervise from your phone. ~5 MB, starts in under half a second." />
+    <meta property="og:title" content="Playdown — the lightweight workbench for agentic workflows" />
+    <meta property="og:description" content="Your specs and your agents in one light window. Annotate markdown, send the review to any coding agent in the built-in terminal, supervise from your phone. ~5 MB, free forever." />
     <meta property="og:image" content="https://z-alamsyah.github.io/playdown/og.png" />
     <meta property="og:url" content="https://z-alamsyah.github.io/playdown/" />
     <meta property="og:type" content="website" />
@@ -67,7 +67,7 @@
       @media (max-width: 680px) { .nav-links a:not(.nav-cta) { display: none; } }
 
       /* hero */
-      header { position: relative; z-index: 1; text-align: center; padding: 110px 0 70px; }
+      header { position: relative; z-index: 1; text-align: center; padding: 96px 0 44px; }
       .eyebrow {
         display: inline-block; font-family: var(--mono); font-size: 12px; letter-spacing: 0.12em;
         text-transform: uppercase; color: var(--orange);
@@ -75,15 +75,15 @@
         animation: fade-up 0.6s both;
       }
       h1 {
-        font-size: clamp(40px, 7vw, 76px); line-height: 1.02; letter-spacing: -0.03em; font-weight: 850;
+        font-size: clamp(38px, 6.6vw, 72px); line-height: 1.04; letter-spacing: -0.03em; font-weight: 850;
         animation: fade-up 0.6s 0.05s both;
       }
       h1 .accent { color: var(--orange); }
       .sub {
-        max-width: 620px; margin: 24px auto 0; font-size: clamp(16px, 2.2vw, 20px); color: var(--muted);
+        max-width: 660px; margin: 24px auto 0; font-size: clamp(16px, 2.2vw, 19px); color: var(--muted);
         animation: fade-up 0.6s 0.1s both;
       }
-      .cta-row { display: flex; gap: 14px; justify-content: center; margin-top: 38px; flex-wrap: wrap; animation: fade-up 0.6s 0.15s both; }
+      .cta-row { display: flex; gap: 14px; justify-content: center; margin-top: 34px; flex-wrap: wrap; animation: fade-up 0.6s 0.15s both; }
       .btn {
         display: inline-flex; align-items: center; gap: 9px; padding: 13px 26px; border-radius: 10px;
         font-weight: 650; font-size: 15px; cursor: pointer; border: 1px solid transparent; transition: transform 0.12s, filter 0.12s, background 0.12s;
@@ -93,12 +93,45 @@
       .btn-primary:hover { filter: brightness(1.1); }
       .btn-ghost { background: transparent; border-color: var(--border); color: var(--text); }
       .btn-ghost:hover { background: var(--bg2); }
-      .stats { display: flex; gap: 40px; justify-content: center; margin-top: 54px; flex-wrap: wrap; animation: fade-up 0.6s 0.2s both; }
-      .stat .n { font-size: 30px; font-weight: 800; color: var(--text); }
-      .stat .l { font-size: 13px; color: var(--faint); font-family: var(--mono); }
 
-      /* app mockup */
-      .mock-wrap { position: relative; z-index: 1; margin: 30px auto 0; max-width: 900px; padding: 0 24px; animation: fade-up 0.7s 0.25s both; }
+      /* proof bar */
+      .stats { display: flex; gap: 48px; justify-content: center; margin-top: 52px; flex-wrap: wrap; animation: fade-up 0.6s 0.2s both; }
+      .stat .n { font-size: 42px; font-weight: 850; color: var(--text); letter-spacing: -0.02em; line-height: 1.15; }
+      .stat .l { font-size: 13px; color: var(--faint); font-family: var(--mono); }
+      .cmp { margin: 26px auto 0; border-collapse: collapse; font-size: 13.5px; color: var(--muted); }
+      .cmp th, .cmp td { padding: 6px 18px; border-bottom: 1px solid var(--border); text-align: left; }
+      .cmp th { color: var(--faint); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; }
+      .cmp td:first-child { color: var(--faint); }
+      .cmp .us { color: var(--text); font-weight: 650; }
+
+      /* install command */
+      .cmd {
+        display: flex; align-items: center; gap: 12px; max-width: 720px; margin: 0 auto;
+        background: #0a0b0e; border: 1px solid var(--border); border-radius: 12px; padding: 16px 18px;
+        font-family: var(--mono); font-size: 14px; text-align: left;
+      }
+      .cmd .prompt { color: var(--orange); }
+      .cmd code { flex: 1; overflow-x: auto; white-space: nowrap; color: var(--text); }
+      .cmd button {
+        background: var(--bg2); border: 1px solid var(--border); color: var(--muted); border-radius: 7px;
+        padding: 6px 12px; font-size: 12px; cursor: pointer; flex-shrink: 0; font-family: var(--sans);
+      }
+      .cmd button:hover { color: var(--text); border-color: var(--orange); }
+      .alt-installs { margin-top: 16px; font-size: 14px; color: var(--faint); }
+      .alt-installs a { color: var(--orange); }
+      .hero-cta { margin-top: 34px; animation: fade-up 0.6s 0.15s both; }
+
+      /* hero media (demo gif with graceful mock fallback) */
+      .demo-wrap { position: relative; z-index: 1; margin: 48px auto 0; max-width: 960px; padding: 0 24px; animation: fade-up 0.7s 0.25s both; }
+      .demo-media img.demo {
+        width: 100%; display: block; border-radius: 12px; border: 1px solid var(--border);
+        box-shadow: 0 40px 120px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.02);
+      }
+      .demo-wrap .mock-fallback { display: none; }
+      .demo-wrap.noimg .demo-media { display: none; }
+      .demo-wrap.noimg .mock-fallback { display: block; }
+
+      /* app mockup (fallback + feature illustration) */
       .mock {
         border: 1px solid var(--border); border-radius: 12px; overflow: hidden;
         box-shadow: 0 40px 120px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.02);
@@ -107,7 +140,6 @@
       .mock-title { height: 30px; background: var(--orange); display: flex; align-items: center; padding-left: 64px; gap: 7px; color: #fff; font-size: 12px; font-weight: 700; position: relative; }
       .mock-title .lights { position: absolute; left: 12px; display: flex; gap: 7px; }
       .mock-title .lights i { width: 11px; height: 11px; border-radius: 50%; display: block; }
-      /* editor tab strip */
       .mock-tabs { display: flex; background: var(--bg2); border-bottom: 1px solid var(--border); font-size: 11px; overflow: hidden; }
       .mtab { padding: 7px 12px; color: var(--faint); border-right: 1px solid var(--border); white-space: nowrap; font-family: var(--mono); }
       .mtab.on { background: rgba(255, 62, 0, 0.14); color: var(--text); box-shadow: inset 0 -2px 0 var(--orange); }
@@ -122,7 +154,6 @@
       .mock-main code { font-family: var(--mono); background: #0e0f13; padding: 1px 6px; border-radius: 4px; color: #e0a96d; }
       .fmcard { background: #0e0f13; border: 1px solid var(--border); border-radius: 8px; padding: 9px 12px; margin-bottom: 12px; font-family: var(--mono); font-size: 11px; line-height: 1.75; }
       .fmcard .k { color: var(--orange); display: inline-block; width: 52px; }
-      /* terminal panel */
       .mock-term { border-top: 1px solid var(--border); background: #0a0b0e; }
       .mterm-head { display: flex; align-items: center; gap: 7px; padding: 5px 10px; font-size: 10px; letter-spacing: 0.08em; color: var(--faint); text-transform: uppercase; border-bottom: 1px solid var(--border); }
       .mtt { font-family: var(--mono); text-transform: none; letter-spacing: 0; padding: 2px 7px; border-radius: 5px; background: #16171d; color: var(--muted); }
@@ -139,14 +170,22 @@
       @media (max-width: 680px) { .mock-body { grid-template-columns: 1fr; } .mock-side { display: none; } .mterm-body { grid-template-columns: 1fr; } .tcol + .tcol { display: none; } }
 
       /* sections */
-      section.block { position: relative; z-index: 1; padding: 80px 0; }
-      .section-head { text-align: center; margin-bottom: 50px; }
+      section.block { position: relative; z-index: 1; padding: 76px 0; }
+      .section-head { text-align: center; margin-bottom: 44px; }
       .section-head h2 { font-size: clamp(28px, 4vw, 40px); letter-spacing: -0.02em; }
-      .section-head p { color: var(--muted); margin-top: 10px; }
+      .section-head p { color: var(--muted); margin-top: 10px; max-width: 720px; margin-left: auto; margin-right: auto; }
+      .harness-line {
+        max-width: 640px; margin: -26px auto 40px; text-align: center;
+        font-size: 15px; color: var(--text); font-weight: 600;
+      }
+      .harness-line .accent { color: var(--orange); }
 
       .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
       @media (max-width: 860px) { .grid { grid-template-columns: repeat(2, 1fr); } }
       @media (max-width: 560px) { .grid { grid-template-columns: 1fr; } }
+      .grid.g4 { grid-template-columns: repeat(4, 1fr); }
+      @media (max-width: 860px) { .grid.g4 { grid-template-columns: repeat(2, 1fr); } }
+      @media (max-width: 560px) { .grid.g4 { grid-template-columns: 1fr; } }
       .feat {
         background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 22px;
         transition: transform 0.15s, border-color 0.15s;
@@ -156,24 +195,7 @@
       .feat h3 { font-size: 16px; margin-bottom: 6px; letter-spacing: -0.01em; }
       .feat p { font-size: 14px; color: var(--muted); }
 
-      /* install */
-      .install { text-align: center; }
-      .cmd {
-        display: flex; align-items: center; gap: 12px; max-width: 720px; margin: 0 auto;
-        background: #0a0b0e; border: 1px solid var(--border); border-radius: 12px; padding: 16px 18px;
-        font-family: var(--mono); font-size: 14px; text-align: left;
-      }
-      .cmd .prompt { color: var(--orange); }
-      .cmd code { flex: 1; overflow-x: auto; white-space: nowrap; color: var(--text); }
-      .cmd button {
-        background: var(--bg2); border: 1px solid var(--border); color: var(--muted); border-radius: 7px;
-        padding: 6px 12px; font-size: 12px; cursor: pointer; flex-shrink: 0; font-family: var(--sans);
-      }
-      .cmd button:hover { color: var(--text); border-color: var(--orange); }
-      .alt-installs { margin-top: 20px; font-size: 14px; color: var(--faint); }
-      .alt-installs a { color: var(--orange); }
-
-      /* review loop */
+      /* step cards (annotate + remote) */
       .loop { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; max-width: 980px; margin: 0 auto; }
       @media (max-width: 760px) { .loop { grid-template-columns: 1fr; } }
       .loop-step { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 24px; position: relative; }
@@ -186,21 +208,10 @@
       .loop-step p { font-size: 14px; color: var(--muted); }
       .loop-step kbd { font-family: var(--mono); font-size: 11px; background: var(--bg2); border: 1px solid var(--border); border-radius: 5px; padding: 1px 7px; color: var(--text); }
 
-      /* origin */
-      .origin { max-width: 720px; margin: 0 auto; text-align: center; }
-      .origin p { color: var(--muted); font-size: 17px; }
-      .origin .big { color: var(--text); font-size: clamp(22px, 3.5vw, 30px); font-weight: 750; letter-spacing: -0.02em; line-height: 1.3; margin-bottom: 20px; }
-
-      /* shortcuts */
-      .keys { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px 40px; max-width: 720px; margin: 0 auto; }
-      @media (max-width: 560px) { .keys { grid-template-columns: 1fr; } }
-      .key-row { display: flex; align-items: center; justify-content: space-between; padding: 9px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
-      .key-row .act { color: var(--muted); }
-      kbd { font-family: var(--mono); font-size: 12px; background: var(--bg2); border: 1px solid var(--border); border-radius: 5px; padding: 2px 8px; color: var(--text); }
-
       footer { position: relative; z-index: 1; border-top: 1px solid var(--border); padding: 40px 0; text-align: center; color: var(--faint); font-size: 14px; }
       footer a { color: var(--muted); }
       footer a:hover { color: var(--orange); }
+      footer .links { margin-top: 10px; display: flex; gap: 18px; justify-content: center; flex-wrap: wrap; }
 
       @keyframes fade-up { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
     </style>
@@ -210,164 +221,176 @@
       <div class="wrap">
         <div class="brand"><img class="dot" src="logo.png" alt="" style="background:none;object-fit:cover" /> Playdown</div>
         <div class="nav-links">
-          <a href="#features">Features</a>
+          <a href="#workbench">Workbench</a>
+          <a href="#annotate">Annotate</a>
           <a href="#remote">Remote</a>
-          <a href="#install">Install</a>
           <a href="https://github.com/z-alamsyah/playdown">GitHub</a>
-          <a class="nav-cta" href="#install">Download</a>
+          <a class="nav-cta" href="#install">Install</a>
         </div>
       </div>
     </nav>
 
+    <!-- 1. HERO -->
     <header>
       <div class="wrap">
-        <span class="eyebrow">Markdown + native terminal · ~5 MB · Mac · Windows · Linux</span>
-        <h1>Your agents, docs &amp; terminal,<br /><span class="accent">in one light window</span>.</h1>
+        <span class="eyebrow">Markdown + terminals · any coding agent · ~5 MB</span>
+        <h1>The lightweight <span class="accent">workbench</span><br />for agentic workflows.</h1>
         <p class="sub">
-          Read and edit your agents, skills &amp; PRDs on one side, drive Claude Code in the
-          built-in terminal on the other — in a ~5 MB app that sips RAM.
+          Your PRDs, skills &amp; manifests on one side — the terminals your coding
+          agents run in on the other. Supervise any agent from your phone.
+          ~5&nbsp;MB, opens in under half a second.
         </p>
-        <div class="cta-row">
-          <a class="btn btn-primary" href="#install">↓ Download for macOS</a>
-          <a class="btn btn-ghost" href="https://github.com/z-alamsyah/playdown">★ Star on GitHub</a>
-        </div>
-        <div class="stats">
-          <div class="stat"><div class="n">~5 MB</div><div class="l">app bundle</div></div>
-          <div class="stat"><div class="n">~70 MB</div><div class="l">idle RAM</div></div>
-          <div class="stat"><div class="n">&lt; 0.5s</div><div class="l">cold start</div></div>
-          <div class="stat"><div class="n" id="dl-count">—</div><div class="l">downloads</div></div>
+        <div class="hero-cta" id="install">
+          <div class="cmd">
+            <span class="prompt">$</span>
+            <code id="cmd">curl -fsSL https://raw.githubusercontent.com/z-alamsyah/playdown/main/install.sh | bash</code>
+            <button onclick="copyCmd()" id="copy">Copy</button>
+          </div>
+          <p class="alt-installs">
+            macOS &amp; Linux one-liner · or <a href="https://github.com/z-alamsyah/playdown/releases/latest">download for macOS / Linux / Windows</a>
+          </p>
         </div>
       </div>
     </header>
 
-    <div class="mock-wrap">
-      <div class="mock">
-        <div class="mock-title">
-          <span class="lights"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span>
-          <img src="logo.png" alt="" style="width:15px;height:15px;border-radius:4px;vertical-align:-3px;margin-right:5px" />Playdown — full-stack-engineer.md
-        </div>
-        <div class="mock-tabs">
-          <span class="mtab">rfc.md</span>
-          <span class="mtab">prd-reviewer.md</span>
-          <span class="mtab on">full-stack-engineer.md</span>
-        </div>
-        <div class="mock-body">
-          <div class="mock-side">
-            <div class="h">Outline</div>
-            <div class="row">Inputs</div>
-            <div class="row">Modes</div>
-            <div class="row">Core rules</div>
-            <div class="row">Done means</div>
+    <!-- hero media: real demo, mock as graceful fallback -->
+    <div class="demo-wrap" id="demo">
+      <div class="demo-media">
+        <img class="demo" src="assets/demo.gif" alt="Playdown demo — annotate a PRD, send the review to a coding agent in the built-in terminal, watch it work" loading="lazy"
+             onerror="document.getElementById('demo').classList.add('noimg')" />
+      </div>
+      <div class="mock-fallback">
+        <div class="mock">
+          <div class="mock-title">
+            <span class="lights"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span>
+            <img src="logo.png" alt="" style="width:15px;height:15px;border-radius:4px;vertical-align:-3px;margin-right:5px" />Playdown — prd.md
           </div>
-          <div class="mock-main">
-            <div class="fmcard">
-              <div><span class="k">name</span> full-stack-engineer</div>
-              <div><span class="k">tools</span> Read, Grep, Write, Edit, Bash</div>
-              <div><span class="k">model</span> opus</div>
+          <div class="mock-tabs">
+            <span class="mtab">rfc.md</span>
+            <span class="mtab">skills/review.md</span>
+            <span class="mtab on">prd.md</span>
+          </div>
+          <div class="mock-body">
+            <div class="mock-side">
+              <div class="h">Outline</div>
+              <div class="row">Flow</div>
+              <div class="row">Rollout</div>
+              <div class="row">Metrics</div>
             </div>
-            <p>You are the senior full-stack engineer for the delivery pipeline.</p>
-            <p>Implement <code>rfc.md</code>; satisfy the ACs in <code>prd-refined.md</code>.</p>
-          </div>
-          <div class="mock-side r">
-            <div class="h">.agents</div>
-            <div class="row">code-reviewer.md</div>
-            <div class="row on">full-stack-engineer.md</div>
-            <div class="row">qa-engineer.md</div>
-            <div class="row">rfc-author.md</div>
-          </div>
-        </div>
-        <div class="mock-term">
-          <div class="mterm-head">Terminal <span class="mtt on">1: zsh</span><span class="mtt">2: zsh</span></div>
-          <div class="mterm-body">
-            <div class="tcol">
-              <div class="tline"><span class="g">✻</span> Claude Code v2.1 — Welcome back, zico!</div>
-              <div class="tline dim">&gt; implement the RFC acceptance criteria</div>
-              <div class="tline"><span class="o">●</span> Reading rfc.md, prd-refined.md…</div>
-              <div class="tline"><span class="o">●</span> Editing src/notify/email.ts <span class="g">+84</span> <span class="r">−12</span></div>
-              <div class="tline"><span class="g">✓</span> 3 ACs satisfied · tests green</div>
-              <div class="tline"><span class="o">outlander</span> <span class="dim">(Opus 4.8)</span> ▸▸ bypass on</div>
-              <div class="tline">$ <span class="cursor">▍</span></div>
+            <div class="mock-main">
+              <div class="fmcard">
+                <div><span class="k">title</span> Checkout v2 — PRD</div>
+                <div><span class="k">status</span> in-review</div>
+                <div><span class="k">owner</span> platform-team</div>
+              </div>
+              <p>Split payment authorization from order placement so a failed charge never leaves a phantom order behind.</p>
             </div>
-            <div class="tcol">
-              <div class="tline dim">$ git status</div>
-              <div class="tline"><span class="o">M</span> src/notify/email.ts</div>
-              <div class="tline"><span class="o">M</span> docs/rfc.md</div>
-              <div class="tline dim">$ pnpm test</div>
-              <div class="tline"><span class="g">✓</span> 42 passed (1.2s)</div>
-              <div class="tline dim">$ ls</div>
-              <div class="tline"><span class="b">.claude/</span> <span class="b">src/</span> <span class="b">docs/</span> CLAUDE.md</div>
-              <div class="tline">$ <span class="cursor">▍</span></div>
+            <div class="mock-side r">
+              <div class="h">playdown-demo</div>
+              <div class="row">skills/</div>
+              <div class="row">manifest.md</div>
+              <div class="row on">prd.md</div>
+            </div>
+          </div>
+          <div class="mock-term">
+            <div class="mterm-head">Terminal <span class="mtt on">1: ✳ claude</span><span class="mtt">2: zsh</span></div>
+            <div class="mterm-body">
+              <div class="tcol">
+                <div class="tline"><span class="g">✻</span> Claude Code — Welcome back!</div>
+                <div class="tline dim">&gt; apply the review feedback in prd.md</div>
+                <div class="tline"><span class="o">●</span> Reading prd.md…</div>
+                <div class="tline"><span class="o">●</span> Editing prd.md <span class="g">+9</span> <span class="r">−2</span></div>
+                <div class="tline"><span class="g">✓</span> 3 comments addressed</div>
+                <div class="tline">$ <span class="cursor">▍</span></div>
+              </div>
+              <div class="tcol">
+                <div class="tline dim">$ git diff --stat</div>
+                <div class="tline"><span class="o">M</span> prd.md <span class="g">+9</span> <span class="r">−2</span></div>
+                <div class="tline dim">$ pnpm test</div>
+                <div class="tline"><span class="g">✓</span> 42 passed (1.2s)</div>
+                <div class="tline">$ <span class="cursor">▍</span></div>
+              </div>
             </div>
           </div>
         </div>
       </div>
-      <p class="mock-cap">
-        Read your agents, skills &amp; PRDs on one side — drive <b>Claude Code</b> in the
-        built-in terminal on the other. One light <b>~5 MB</b> window for your whole AI-agent workflow.
-      </p>
+      <p class="mock-cap">Annotate a PRD, send the review to the agent, watch it work — <b>one light window</b>.</p>
     </div>
 
-    <section class="block" id="loop">
+    <!-- 2. PROOF BAR -->
+    <section class="block" id="proof" style="padding-top: 40px;">
+      <div class="wrap" style="text-align:center;">
+        <div class="stats" style="margin-top: 0;">
+          <div class="stat"><div class="n">~5 MB</div><div class="l">app bundle</div></div>
+          <div class="stat"><div class="n">~70–100 MB</div><div class="l">RAM, idle</div></div>
+          <div class="stat"><div class="n">&lt; 0.5 s</div><div class="l">startup</div></div>
+          <div class="stat"><div class="n" id="dl-count">—</div><div class="l">downloads</div></div>
+        </div>
+        <table class="cmp" role="presentation">
+          <tr><th></th><th class="us">Playdown</th><th>Typical code editor</th></tr>
+          <tr><td>App bundle</td><td class="us">~5 MB</td><td>100+ MB</td></tr>
+          <tr><td>RAM (idle)</td><td class="us">~70–100 MB</td><td>300–500+ MB</td></tr>
+          <tr><td>Startup</td><td class="us">&lt; 0.5 s</td><td>1–3 s</td></tr>
+        </table>
+      </div>
+    </section>
+
+    <!-- 3a. WORKBENCH -->
+    <section class="block" id="workbench" style="padding-top: 30px;">
       <div class="wrap">
         <div class="section-head">
-          <h2>The review loop, closed.</h2>
-          <p>Review an RFC and ship the fixes without leaving one window.</p>
+          <h2>Your specs and your agents, one window.</h2>
+          <p>
+            Split panes put the markdown that steers your agents — PRDs, skills,
+            manifests — next to real multi-session terminals where the agents run.
+            Edit on the left, live preview on the right, <code style="font-family:var(--mono)">claude</code> (or any CLI
+            agent) underneath. Files an agent edits <b>auto-reload</b> in place, and the
+            git gutter marks every changed line — click it to diff against HEAD.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3b. ANNOTATE -->
+    <section class="block" id="annotate" style="padding-top: 0;">
+      <div class="wrap">
+        <div class="section-head">
+          <h2>Send context straight to the terminal.</h2>
+          <p>Review a doc like a pull request — then hand the whole review to your agent.</p>
         </div>
         <div class="loop">
           <div class="loop-step">
             <div class="n">1</div>
-            <h3>Read &amp; annotate</h3>
-            <p>Flip on <b>Annotate</b> <kbd>⌘⇧A</kbd>, click any paragraph in the rendered doc, leave your review comments — quoted and anchored to the source line.</p>
+            <h3>Annotate the rendered doc</h3>
+            <p>Flip on <b>Annotate</b> <kbd>⌘⇧A</kbd>, click any block in the preview, leave a comment. Each note is quoted, anchored to its source line, and saved per file.</p>
           </div>
           <div class="loop-step">
             <div class="n">2</div>
-            <h3>Send to your agent</h3>
-            <p><b>Send to terminal</b> pastes all your feedback as one AI-ready prompt straight into Claude Code running in the built-in terminal.</p>
+            <h3>Send to terminal</h3>
+            <p>One click pastes every file's notes as a single prompt into the <b>active terminal session</b> — safe paste, so multi-line prompts don't run themselves. Notes clear once sent. Prefer another destination? <b>Copy as prompt</b>.</p>
           </div>
           <div class="loop-step">
             <div class="n">3</div>
             <h3>Watch the changes land</h3>
-            <p>The agent edits, files <b>auto-reload</b>, the <b>git gutter</b> marks every changed line — click it to diff against HEAD. Re-review, repeat.</p>
+            <p>The agent edits, files auto-reload, the git gutter shows the diff. Re-review, repeat — the loop never leaves the window.</p>
           </div>
         </div>
       </div>
     </section>
 
-    <section class="block" id="features">
+    <!-- 3c. REMOTE -->
+    <section class="block" id="remote" style="padding-top: 0;">
       <div class="wrap">
         <div class="section-head">
-          <h2>Everything you need. Nothing you don't.</h2>
-          <p>Built for people who live in markdown all day — skills, agents, PRDs, manifests.</p>
+          <h2>Leave your desk, not your session.</h2>
+          <p>The optional <a href="https://github.com/z-alamsyah/playdown-remote" style="color:var(--orange)">playdown-remote</a> companion puts your terminal sessions on your phone — no relay, no cloud, no account.</p>
         </div>
-        <div class="grid">
-          <div class="feat"><div class="ico">💬</div><h3>Annotate mode</h3><p>Comment on rendered docs like a GitHub PR review — quoted, line-anchored, exported as one AI-ready prompt.</p></div>
-          <div class="feat"><div class="ico">🖥️</div><h3>Built-in terminal</h3><p>Real multi-session PTY terminal (<kbd>Ctrl+`</kbd>, <kbd>⌘T</kbd>) — run Claude Code next to your docs. Lazy-loaded, zero idle cost.</p></div>
-          <div class="feat"><div class="ico">🧬</div><h3>Git-aware</h3><p>Gutter marks every added/changed/deleted line vs HEAD; click for a side-by-side diff. Compare any two files.</p></div>
-          <div class="feat"><div class="ico">🔍</div><h3>Global search</h3><p>Search file contents across the workspace on <kbd>⌘⇧F</kbd> — grouped results, jump straight to the line.</p></div>
-          <div class="feat"><div class="ico">⚡</div><h3>Command palette</h3><p>Every action, keybinding, and recent project one <kbd>⌘⇧P</kbd> away.</p></div>
-          <div class="feat"><div class="ico">🔄</div><h3>Auto-reload</h3><p>Files edited outside — say, by an AI agent — refresh in place. Unsaved work is never clobbered.</p></div>
-          <div class="feat"><div class="ico">🪟</div><h3>Split panes</h3><p>VSCode-style splits — drag a tab to any edge, resize, nest. Edit left, preview right.</p></div>
-          <div class="feat"><div class="ico">🎨</div><h3>GitHub look</h3><p>Primer dark/light themes, GitHub-rendered markdown, material-style file icons.</p></div>
-          <div class="feat"><div class="ico">🔡</div><h3>JSON tools</h3><p>Format <kbd>⇧⌥F</kbd>, minify, sort keys, parse errors pointed at the exact line.</p></div>
-          <div class="feat"><div class="ico">⌨️</div><h3><code>playdown</code> CLI</h3><p><code>playdown .</code> opens any folder from your shell; <code>--update</code> pulls the latest release.</p></div>
-          <div class="feat"><div class="ico">📱</div><h3>Phone remote</h3><p>Optional <a href="https://github.com/z-alamsyah/playdown-remote">companion</a> streams your terminal tabs to your phone — QR pairing, Tailscale-friendly, Telegram alerts.</p></div>
-          <div class="feat"><div class="ico">🪶</div><h3>Genuinely light</h3><p>Tauri + system WebView. No bundled Chromium. ~5 MB app, ~70 MB RAM.</p></div>
-          <div class="feat"><div class="ico">🆓</div><h3>No sign-in, free forever</h3><p>No account, no telemetry, no subscription. Open source (MIT) — just download and go.</p></div>
-        </div>
-      </div>
-    </section>
-
-    <section class="block" id="remote">
-      <div class="wrap">
-        <div class="section-head">
-          <h2>Leave the desk. Keep the agents.</h2>
-          <p>The optional <a href="https://github.com/z-alamsyah/playdown-remote">playdown-remote</a> companion puts your terminal sessions on your phone — no relay, no cloud, no account.</p>
-        </div>
+        <p class="harness-line">Works with <span class="accent">any coding agent</span> — Playdown remotes the terminal, not the harness.</p>
         <div class="loop">
           <div class="loop-step">
             <div class="n">1</div>
             <h3>Pair by QR</h3>
-            <p>Toggle <b>Remote bridge</b> in Settings, run <code style="font-family:var(--mono)">playdown-remote</code>, scan the QR — same Wi-Fi, or anywhere via <b>Tailscale</b> (direct WireGuard, no middleman).</p>
+            <p>Flip on <b>Remote access</b> in Settings — Playdown runs the companion for you and shows the QR right there. Same Wi-Fi, or anywhere via <b>Tailscale</b> (direct WireGuard, no middleman).</p>
           </div>
           <div class="loop-step">
             <div class="n">2</div>
@@ -377,64 +400,53 @@
           <div class="loop-step">
             <div class="n">3</div>
             <h3>Or just get pinged</h3>
-            <p>Hook up your own <b>Telegram bot</b>: blocked/done alerts with the agent's actual question and inline <b>Enter / Esc / 1 / 2 / 3</b> keys to answer from the notification.</p>
+            <p>Hook up your own <b>Telegram bot</b>: needs-you / done alerts carrying the agent's actual question, with inline <b>Enter / Esc / 1 / 2 / 3</b> keys to answer from the notification.</p>
           </div>
         </div>
       </div>
     </section>
 
-    <section class="block install" id="install">
+    <!-- 3d. EDITOR -->
+    <section class="block" id="editor" style="padding-top: 0;">
       <div class="wrap">
         <div class="section-head">
-          <h2>Install in one line</h2>
-          <p>macOS — copy, paste, done.</p>
+          <h2>A proper markdown editor underneath.</h2>
+          <p>Everything you need for a day in markdown — nothing you don't.</p>
         </div>
-        <div class="cmd">
-          <span class="prompt">$</span>
-          <code id="cmd">curl -fsSL https://raw.githubusercontent.com/z-alamsyah/playdown/main/install.sh | bash</code>
-          <button onclick="copyCmd()" id="copy">Copy</button>
+        <div class="grid">
+          <div class="feat"><div class="ico">🪟</div><h3>Tabs &amp; split panes</h3><p>Drag a tab to any edge — nested, resizable, VSCode-style. Edit ⇄ preview per pane.</p></div>
+          <div class="feat"><div class="ico">🔎</div><h3>Find anything</h3><p>Quick open <kbd>⌘P</kbd>, full-content search <kbd>⌘⇧F</kbd>, command palette <kbd>⌘⇧P</kbd>, go to line.</p></div>
+          <div class="feat"><div class="ico">🧩</div><h3>Rich markdown</h3><p>GFM, Mermaid diagrams, foldable YAML frontmatter with a metadata card in preview, outline panel.</p></div>
+          <div class="feat"><div class="ico">🔡</div><h3>JSON &amp; images</h3><p>Format <kbd>⇧⌥F</kbd>, minify, sort keys, errors at the exact line. Images render inline.</p></div>
+          <div class="feat"><div class="ico">🗃️</div><h3>File ops &amp; CLI</h3><p>Create, rename, trash, drag-to-move in the tree. <code>playdown .</code> opens any folder from your shell.</p></div>
+          <div class="feat"><div class="ico">🎨</div><h3>Yours to tune</h3><p>GitHub-style dark/light themes, fully rebindable shortcuts, session restored across restarts.</p></div>
         </div>
-        <p class="alt-installs">
-          Prefer manual? <a href="https://github.com/z-alamsyah/playdown/releases/latest">Download the .dmg</a> &nbsp;·&nbsp;
-          Windows / Linux builds on the <a href="https://github.com/z-alamsyah/playdown/releases">releases page</a>.
-        </p>
       </div>
     </section>
 
-    <section class="block">
-      <div class="wrap origin">
-        <p class="big">Built day-by-day with Claude Code — from "this feels overkill" to a shipping app.</p>
-        <p>
-          Started as a gripe: full IDEs eating hundreds of MB just to read a <code style="font-family:var(--mono);color:#e0a96d">.md</code> file.
-          A few iterations later: editor groups, drag-to-split, outline, JSON, images, a configurable orange title bar — and an installer.
-          Open source, MIT.
-        </p>
-      </div>
-    </section>
-
-    <section class="block">
+    <!-- 4. TRUST -->
+    <section class="block" id="trust" style="padding-top: 0;">
       <div class="wrap">
-        <div class="section-head"><h2>Keyboard-first</h2><p>All rebindable in Settings.</p></div>
-        <div class="keys">
-          <div class="key-row"><span class="act">Quick open</span><kbd>⌘P</kbd></div>
-          <div class="key-row"><span class="act">Search in files</span><kbd>⌘⇧F</kbd></div>
-          <div class="key-row"><span class="act">Command palette</span><kbd>⌘⇧P</kbd></div>
-          <div class="key-row"><span class="act">Annotate mode</span><kbd>⌘⇧A</kbd></div>
-          <div class="key-row"><span class="act">Toggle edit / preview</span><kbd>⌘E</kbd></div>
-          <div class="key-row"><span class="act">Split right</span><kbd>⌘\</kbd></div>
-          <div class="key-row"><span class="act">Toggle terminal</span><kbd>Ctrl `</kbd></div>
-          <div class="key-row"><span class="act">New terminal / focus switch</span><kbd>⌘T / ⌘J</kbd></div>
-          <div class="key-row"><span class="act">Go to line</span><kbd>⌘G</kbd></div>
-          <div class="key-row"><span class="act">Format JSON</span><kbd>⇧⌥F</kbd></div>
-          <div class="key-row"><span class="act">Toggle sidebar / outline</span><kbd>⌘B / ⌘⇧O</kbd></div>
-          <div class="key-row"><span class="act">Settings</span><kbd>⌘,</kbd></div>
+        <div class="grid g4">
+          <div class="feat"><div class="ico">🆓</div><h3>Free forever</h3><p>No subscription, no paid tier waiting to ambush you.</p></div>
+          <div class="feat"><div class="ico">🙅</div><h3>No account</h3><p>Download and go — there is nothing to sign into.</p></div>
+          <div class="feat"><div class="ico">🕶️</div><h3>No telemetry</h3><p>The app phones nothing home. Usage is gauged only from public download counts.</p></div>
+          <div class="feat"><div class="ico">⚖️</div><h3>Open source</h3><p>MIT-licensed on GitHub — read it, fork it, build on it.</p></div>
         </div>
       </div>
     </section>
 
+    <!-- 5. FOOTER -->
     <footer>
       <div class="wrap">
-        <p><img src="logo.png" alt="" style="width:16px;height:16px;border-radius:4px;vertical-align:-3px;margin-right:4px" /><strong>Playdown</strong> — MIT · <a href="https://github.com/z-alamsyah/playdown">github.com/z-alamsyah/playdown</a></p>
+        <p><img src="logo.png" alt="" style="width:16px;height:16px;border-radius:4px;vertical-align:-3px;margin-right:4px" /><strong>Playdown</strong> — MIT</p>
+        <div class="links">
+          <a href="https://github.com/z-alamsyah/playdown">GitHub</a>
+          <a href="https://github.com/z-alamsyah/playdown/releases">Releases</a>
+          <a href="https://github.com/z-alamsyah/playdown-remote">playdown-remote</a>
+          <a href="https://github.com/z-alamsyah/playdown/blob/main/BRIDGE_PROTOCOL.md">Bridge protocol — build your own companion</a>
+          <a href="https://github.com/z-alamsyah/playdown/blob/main/LICENSE">License</a>
+        </div>
       </div>
     </footer>
 
