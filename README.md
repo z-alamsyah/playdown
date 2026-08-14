@@ -5,9 +5,14 @@
 [![Stars](https://img.shields.io/github/stars/z-alamsyah/playdown)](https://github.com/z-alamsyah/playdown/stargazers)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-A lightweight, cross-platform **markdown editor & viewer** built with [Tauri v2](https://tauri.app) + [Svelte 5](https://svelte.dev).
+A lightweight **workbench for agentic workflows**: the markdown your agents read and write, and the terminals they run in — side by side. Works with **any coding agent**, because Playdown remotes the terminal, not the harness.
 
-Built for people who live in markdown all day — skills, agents, PRDs, manifests — and don't want a full IDE eating hundreds of MB of RAM just to read a `.md` file.
+<!-- TODO: hero demo GIF here (assets/demo.gif) -->
+![Playdown demo](docs/assets/demo.gif)
+
+## What is this?
+
+Playdown puts the two halves of agent-driven work in one light window: the markdown that steers agents (PRDs, skills, specs, manifests) and the terminal sessions the agents actually run in. Review a spec, annotate it like a PR, send the feedback to the agent in the built-in terminal, watch the files reload as it edits. It's built for people who live in markdown and terminals all day — and it's harness-agnostic: Claude Code, Cursor CLI, aider, opencode, or any CLI agent works, because everything (including phone remote and Telegram alerts) operates at the terminal/PTY level.
 
 | | Playdown | Typical code editor |
 |---|---|---|
@@ -42,16 +47,7 @@ curl -fsSL https://raw.githubusercontent.com/z-alamsyah/playdown/main/install.sh
 ### Windows
 
 Download the `.msi` or `.exe` from [Releases](https://github.com/z-alamsyah/playdown/releases/latest).
-
-### Self-host the landing page (Docker)
-
-```bash
-cp .env.example .env            # set DOCKERHUB_USER
-docker compose build            # nginx:alpine + docs/ (multi-arch friendly)
-docker compose push             # → Docker Hub
-# on the server (e.g. a Jetson / any arm64 or amd64 box):
-docker run -d --restart unless-stopped -p 8080:80 <user>/playdown-site:latest
-```
+(The terminal and remote bridge are macOS/Linux for now.)
 
 ### From source
 
@@ -65,49 +61,48 @@ pnpm tauri build      # bundle for your OS
 
 ## Features
 
-- 📂 **Folder tree** — open a folder (or drag one onto the window); shows all files including dotfiles, with nested indent guides
-- 🗂️ **Tabs** — open multiple files; drag tabs to reorder or move between groups; same-name files show their folder, and the status bar shows the active file's path
-- 🪟 **Split panes** — VSCode-style: drag a tab to a pane edge to split (row/column, nested), resizable dividers; `⌘\` splits right
-- ✏️ **Edit ⇄ Preview** — per-pane toggle (top-right of each group); edit on the left, live preview on the right
-- 🔎 **Quick Open** — `⌘P` fuzzy file finder
-- 🔦 **Find / replace** — `⌘F` in the editor (CodeMirror search)
-- 🧭 **Outline** — headings of the active file in a panel opposite the sidebar; click to jump
-- 🧩 **Frontmatter-aware** — YAML frontmatter highlighted & foldable in the editor, rendered as a metadata card in preview
-- ✨ **GFM** — tables, task lists, code syntax highlighting
-- 🧜 **Mermaid** — diagrams rendered in preview (lazy-loaded)
-- 🔡 **JSON** — syntax highlighting, `⌘⇧F` to format/pretty-print, highlighted JSON preview
-- 🖼️ **Image preview** — png/jpg/gif/webp/svg/bmp/ico/avif rendered inline
-- 🗃️ **File ops** — new file / new folder (created inside the selected folder), rename (right-click or `Enter`), delete to Trash, copy full / relative path (`⌘C`), and **drag-and-drop to move** files/folders in the sidebar
-- 🖥️ **Built-in terminal** — multi-session (new / switch / kill), **dockable bottom or right (side-by-side with the editor)**, resizable, `` Ctrl+` `` to toggle (xterm.js + JuliaMono lazy-loaded — zero idle cost)
-- 📱 **Remote access** — drive your terminal tabs (and the agents in them) from your phone or Telegram via the optional [playdown-remote](https://github.com/z-alamsyah/playdown-remote) companion — see [Remote access](#remote-access-phone--telegram)
-- ⌨️ **`playdown` CLI** — `playdown .` opens a folder from your terminal; `playdown --update` pulls the latest release; `playdown --version` / `--help` (install from Settings → Command line)
-- 🔍 **Zoom** — `⌘=` / `⌘-` / `⌘0` or trackpad pinch
-- ⚙️ **Settings** (`⌘,`) — theme, sidebar side (left/right), zoom, and **fully rebindable shortcuts**
-- 🌗 **Dark / light themes**, window state, and full session (layout + open tabs) persisted across restarts
-- 🆓 **No sign-in, free forever** — no account, no telemetry, no subscription. Open source (MIT)
+**The workbench:**
+
+- 🖥️ **Built-in multi-session terminal** — real PTYs (new / switch / rename / kill), dockable bottom or right side-by-side with the editor, resizable, `` Ctrl+` `` to toggle. xterm.js lazy-loaded — zero cost until opened. "New agent terminal" in the command palette starts a session with your configured agent command.
+- 💬 **Annotate → send to your agent** — flip on Annotate (`⌘⇧A`, forces preview), click any block in the rendered markdown, leave a comment; each note is quoted and anchored to its source line and persists per file. **Copy as prompt** exports every annotated file's notes as one prompt; **Send to terminal** pastes it into the *active* terminal session (bracketed paste — multi-line prompts don't self-execute) and clears the annotations. Notes anchor by line number, so heavy edits above them can drift older notes.
+- 📊 **Agents at a glance** — every terminal tab shows live status derived from PTY signals: spinner = working, red = needs you, green = done. OS notification when a background agent blocks or finishes; status bar totals across sessions.
+- 📱 **Remote access (phone + Telegram)** — the optional [playdown-remote](https://github.com/z-alamsyah/playdown-remote) companion streams your sessions to a phone browser and a Telegram bot. **Works with any coding agent: it remotes the terminal, not the harness.** See [Remote access](#remote-access-phone--telegram).
+- 🔄 **Auto-reload** — files edited outside (say, by an agent) refresh in place; unsaved work is never clobbered.
+- 🧬 **Git-aware** — gutter marks added/changed/deleted lines vs HEAD; click for a side-by-side diff. Compare any two files.
+
+**The editor:**
+
+- 📂 **Folder tree** — open a folder (or drag one onto the window); all files including dotfiles, nested indent guides, drag-and-drop to move, Finder/file-manager drops to import
+- 🗂️ **Tabs & split panes** — drag tabs to reorder, move between groups, or split to any edge (VSCode-style, nested, resizable); `⌘\` splits right
+- ✏️ **Edit ⇄ Preview** — per-pane toggle; edit left, live preview right
+- 🔎 **Quick Open** (`⌘P`), **global search** across file contents (`⌘⇧F`), **find/replace** in the editor (`⌘F`), **go to line** (`⌘G`)
+- ⚡ **Command palette** (`⌘⇧P`) — every action, keybinding, and recent folder
+- 🧭 **Outline**, 🧩 **frontmatter-aware** (foldable in editor, metadata card in preview), ✨ **GFM**, 🧜 **Mermaid** (lazy-loaded)
+- 🔡 **JSON tools** — format (`⇧⌥F`), minify (`⌘⇧M`), optional key sorting, parse errors pointed at the exact line
+- 🖼️ **Image preview** — png/jpg/gif/webp/svg/bmp/ico/avif inline; `.html` files open in your browser
+- 🗃️ **File ops** — new file/folder, rename, delete to Trash, copy full/relative path
+- ⌨️ **`playdown` CLI** — `playdown .` opens a folder from your shell; `--update` pulls the latest release
+- 🪟 **Multi-window** (File ▸ New Window) with per-window titlebar colors, 🔍 **zoom**, ⚙️ **settings** (`⌘,`) with fully rebindable shortcuts, 🌗 **GitHub-style dark/light themes**, session persisted across restarts
+
+**The deal:**
+
+- 🆓 **Free forever** — no sign-in, no telemetry, no subscription. Open source (MIT).
 
 ## Remote access (phone + Telegram)
 
-Left the desk while an agent is working? The optional
-[**playdown-remote**](https://github.com/z-alamsyah/playdown-remote) companion
-puts your Playdown terminal sessions on your phone — no relay, no cloud, no
-account:
+Left the desk while an agent works? Three steps:
 
-1. Playdown → **Settings → Terminal & agents → Remote bridge: On**
-2. ```bash
+1. Playdown → **Settings → Terminal & agents → Remote access: On**
+   (Playdown runs the companion for you and shows the QR right in Settings.)
+2. If the companion isn't installed yet:
+   ```bash
    curl -fsSL https://raw.githubusercontent.com/z-alamsyah/playdown-remote/main/install.sh | sh
-   playdown-remote
    ```
-3. Scan the QR — same Wi-Fi, or anywhere via [Tailscale](https://tailscale.com).
+3. Scan the QR — same Wi-Fi, or anywhere via [Tailscale](https://tailscale.com) (direct WireGuard, no relay, no cloud, no account).
 
-You get a mobile web terminal (sessions grouped by agent status — needs-you /
-working / done / idle — with a TUI-friendly key bar), and an optional
-**Telegram bot** (`--telegram <token>`) that pings you when an agent blocks or
-finishes, with inline Enter/Esc/1/2/3 keys to answer from the notification.
+You get a mobile web terminal — sessions grouped by agent status (needs-you / working / done / idle) with a TUI-friendly key bar — and an optional **Telegram bot** (`--telegram <token>`) that pings you when an agent blocks or finishes, with inline Enter/Esc/1/2/3 keys to answer from the notification.
 
-Everything speaks a documented local-socket protocol
-([`BRIDGE_PROTOCOL.md`](BRIDGE_PROTOCOL.md)) — build your own companion if you
-like. Requires Playdown ≥ 0.13.0 (macOS/Linux).
+The design is harness-agnostic on purpose: the bridge forwards raw PTY bytes and terminal-level signals, so any CLI agent — or plain `vim` — works unmodified. The socket contract is documented in [`BRIDGE_PROTOCOL.md`](BRIDGE_PROTOCOL.md); build your own companion on it. Requires Playdown ≥ 0.13.0 (macOS/Linux).
 
 ## Keyboard shortcuts
 
@@ -116,15 +111,23 @@ All shortcuts are rebindable in Settings (`⌘,`). Defaults:
 | Shortcut | Action |
 |---|---|
 | `⌘P` | Quick open (find file) |
+| `⌘⇧F` | Search in files |
+| `⌘⇧P` | Command palette |
 | `⌘F` | Find / replace in editor |
+| `⌘G` | Go to line |
 | `⌘O` | Open folder |
 | `⌘S` | Save |
 | `⌘E` | Toggle edit / preview |
+| `⌘⇧A` | Toggle annotate mode |
 | `⌘\` | Split right |
 | `⌘B` | Toggle sidebar |
 | `⌘⇧O` | Toggle outline |
-| `⌘⇧F` | Format JSON |
+| `⇧⌥F` | Format document (JSON) |
+| `⌘⇧M` | Minify JSON |
 | `` Ctrl+` `` | Toggle terminal |
+| `⌘T` | New terminal session |
+| `⌘X` | Close terminal session |
+| `⌘J` | Focus editor ⇄ terminal |
 | `⌘⌥↓` / `⌘⌥↑` | Next / previous terminal session |
 | `⌘W` | Close tab |
 | `⌘⌥W` | Close other tabs |
@@ -143,6 +146,16 @@ Prerequisites: [Node.js](https://nodejs.org) + [pnpm](https://pnpm.io) + [Rust](
 pnpm install
 pnpm tauri dev      # run the app in dev mode
 pnpm tauri build    # produce a distributable bundle (.app / .dmg / …)
+```
+
+### Self-host the landing page (Docker)
+
+```bash
+cp .env.example .env            # set DOCKERHUB_USER
+docker compose build            # nginx:alpine + docs/ (multi-arch friendly)
+docker compose push             # → Docker Hub
+# on the server (e.g. a Jetson / any arm64 or amd64 box):
+docker run -d --restart unless-stopped -p 8080:80 <user>/playdown-site:latest
 ```
 
 ## Tech
