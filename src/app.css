@@ -455,6 +455,59 @@ button {
   overflow-y: auto;
   padding: 32px 40px 64px;
 }
+/* Find-in-preview bar (⌘F while viewing markdown) */
+.pv-find {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: fit-content;
+  margin: -20px 0 8px auto;
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 5px 7px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+}
+.pv-find input {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text);
+  font-size: 13px;
+  width: 170px;
+}
+.pv-find .pv-count {
+  color: var(--text-faint);
+  font-size: 12px;
+  font-family: var(--mono);
+  min-width: 34px;
+  text-align: right;
+}
+.pv-find button {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 13px;
+  padding: 2px 5px;
+  border-radius: 5px;
+}
+.pv-find button:hover {
+  background: var(--bg-hover, rgba(128, 128, 128, 0.15));
+  color: var(--text);
+}
+mark.pv-hit {
+  background: rgba(255, 200, 0, 0.35);
+  color: inherit;
+  border-radius: 2px;
+}
+mark.pv-hit.on {
+  background: rgba(255, 150, 0, 0.75);
+  outline: 1px solid var(--accent);
+}
 
 /* GitHub-style rendered markdown (hand-tuned Primer subset, theme-aware) */
 .markdown-body {

@@ -91,6 +91,7 @@
           <span class="ann-toggle-label">Annotate</span>
         </button>
       {/if}
+      {#if kind === "markdown"}
       <button
         class="ghost-btn"
         title="Toggle edit / preview (⌘E)"
@@ -108,6 +109,7 @@
           </svg>
         {/if}
       </button>
+      {/if}
       <button class="ghost-btn" title="Split right (⌘\)" onclick={splitRight} aria-label="Split right">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <rect x="3" y="3" width="18" height="18" rx="2" />
@@ -133,7 +135,8 @@
           {#key settings.theme}
             <DiffPane path={activeTab.path} />
           {/key}
-        {:else if group.viewMode === "edit"}
+        {:else if group.viewMode === "edit" || kind !== "markdown"}
+          <!-- Preview is a markdown feature — every other kind always edits. -->
           <EditorPane path={activeTab.path} groupId={group.id} {kind} />
         {:else}
           <PreviewPane path={activeTab.path} groupId={group.id} {kind} />

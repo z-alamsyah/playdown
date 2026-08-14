@@ -147,16 +147,6 @@ pnpm tauri dev      # run the app in dev mode
 pnpm tauri build    # produce a distributable bundle (.app / .dmg / …)
 ```
 
-### Self-host the landing page (Docker)
-
-```bash
-cp .env.example .env            # set DOCKERHUB_USER
-docker compose build            # nginx:alpine + docs/ (multi-arch friendly)
-docker compose push             # → Docker Hub
-# on the server (e.g. a Jetson / any arm64 or amd64 box):
-docker run -d --restart unless-stopped -p 8080:80 <user>/playdown-site:latest
-```
-
 ## Tech
 
 - **Shell:** Tauri v2 (Rust core, system WebView — no bundled Chromium)

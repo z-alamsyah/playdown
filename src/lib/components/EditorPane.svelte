@@ -19,12 +19,16 @@
 
   onMount(() => {
     const language: EditorLanguage =
-      kind === "json" ? "json" : kind === "markdown" ? "markdown" : "text";
+      kind === "json" ? "json"
+      : kind === "markdown" ? "markdown"
+      : kind === "code" ? "code"
+      : "text";
     view = createEditor({
       parent: container,
       doc: groups.docContent(path),
       theme: editorTheme(settings.theme),
       language,
+      filename: path.split("/").pop(),
       onChange: (v) => groups.setDocContent(path, v),
       onSave: () => void groups.saveDoc(path),
     });

@@ -51,19 +51,25 @@ const baseTheme = EditorView.theme({
   "&.cm-focused": { outline: "none" },
 });
 
-export type EditorLanguage = "markdown" | "json" | "text";
+export type EditorLanguage = "markdown" | "json" | "text" | "code";
+
+/** Holds a source file's grammar, resolved lazily by filename. */
+const codeCompartment = new Compartment();
 
 export interface EditorOptions {
   parent: HTMLElement;
   doc: string;
   theme: Extension;
   language: EditorLanguage;
+  /** Basename used to pick a grammar when language is "code". */
+  filename?: string;
   onChange: (value: string) => void;
   onSave: () => void;
 }
 
 function languageExtensions(language: EditorLanguage): Extension {
   if (language === "json") return json();
+  if (language === "code") return codeCompartment.of([]);
   if (language === "text") return [];
   return [
     mdCompartment.of(markdown({ base: markdownLanguage })),
@@ -132,6 +138,23 @@ export function createEditor(opts: EditorOptions): EditorView {
         });
       } catch {
         /* view destroyed before grammars finished loading */
+      }
+    });
+  }
+
+  // Source files: resolve the grammar by filename (same lazy language-data
+  // pack). Highlighting only — no compilation, no diagnostics.
+  if (opts.language === "code" && opts.filename) {
+    const filename = opts.filename;
+    void import("@codemirror/language-data").then(async ({ languages }) => {
+      const { LanguageDescription } = await import("@codemirror/language");
+      const desc = LanguageDescription.matchFilename(languages, filename);
+      if (!desc) return;
+      const support = await desc.load();
+      try {
+        view.dispatch({ effects: codeCompartment.reconfigure(support) });
+      } catch {
+        /* view destroyed before the grammar finished loading */
       }
     });
   }

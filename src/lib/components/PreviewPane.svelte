@@ -36,6 +36,103 @@
   });
   onDestroy(() => groups.unregisterPreview(groupId));
 
+  // ---- find in preview (⌘F while viewing) ----------------------------------
+  let finding = $state(false);
+  let query = $state("");
+  let hitTotal = $state(0);
+  let hitCur = $state(0); // 1-based for display
+  let findInput: HTMLInputElement | undefined;
+  let hits: HTMLElement[] = [];
+
+  // Only react to seq bumps AFTER mount — a remount (tab switch back into a
+  // preview) must not reopen the bar from a stale request.
+  let lastFindSeq = groups.previewFind.seq;
+  $effect(() => {
+    const req = groups.previewFind;
+    if (req.seq !== lastFindSeq && req.groupId === groupId) {
+      lastFindSeq = req.seq;
+      finding = true;
+      requestAnimationFrame(() => {
+        findInput?.focus();
+        findInput?.select();
+        if (query) applyFind(query);
+      });
+    }
+  });
+
+  function clearHits() {
+    if (!body) return;
+    body.querySelectorAll("mark.pv-hit").forEach((m) => {
+      const parent = m.parentNode;
+      if (!parent) return;
+      parent.replaceChild(document.createTextNode(m.textContent ?? ""), m);
+      parent.normalize();
+    });
+    hits = [];
+    hitTotal = 0;
+    hitCur = 0;
+  }
+
+  function applyFind(q: string) {
+    clearHits();
+    const term = q.trim().toLowerCase();
+    if (!term || !body) return;
+    // Collect text nodes first — wrapping while walking would invalidate it.
+    const walker = document.createTreeWalker(body, NodeFilter.SHOW_TEXT);
+    const nodes: Text[] = [];
+    for (let n = walker.nextNode(); n; n = walker.nextNode()) nodes.push(n as Text);
+    for (const node of nodes) {
+      if (hits.length >= 500) break;
+      const text = node.textContent ?? "";
+      const lower = text.toLowerCase();
+      if (!lower.includes(term)) continue;
+      const frag = document.createDocumentFragment();
+      let pos = 0;
+      for (let i = lower.indexOf(term); i >= 0; i = lower.indexOf(term, pos)) {
+        frag.appendChild(document.createTextNode(text.slice(pos, i)));
+        const mark = document.createElement("mark");
+        mark.className = "pv-hit";
+        mark.textContent = text.slice(i, i + term.length);
+        frag.appendChild(mark);
+        hits.push(mark);
+        pos = i + term.length;
+      }
+      frag.appendChild(document.createTextNode(text.slice(pos)));
+      node.parentNode?.replaceChild(frag, node);
+    }
+    hitTotal = hits.length;
+    if (hits.length) activate(0);
+  }
+
+  function activate(i: number) {
+    hits[hitCur - 1]?.classList.remove("on");
+    const idx = ((i % hits.length) + hits.length) % hits.length;
+    hitCur = idx + 1;
+    const m = hits[idx];
+    m.classList.add("on");
+    m.scrollIntoView({ block: "center" });
+  }
+
+  function stepFind(dir: 1 | -1) {
+    if (hits.length) activate(hitCur - 1 + dir);
+  }
+
+  function closeFind() {
+    finding = false;
+    clearHits();
+  }
+
+  function onFindKey(e: KeyboardEvent) {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      stepFind(e.shiftKey ? -1 : 1);
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      closeFind();
+    }
+    e.stopPropagation();
+  }
+
   // ---- annotate mode -------------------------------------------------------
   const annotating = $derived(annotations.enabled && kind === "markdown");
 
@@ -104,6 +201,9 @@
   $effect(() => {
     if (!body) return;
     body.innerHTML = result.html;
+    // Re-renders wipe the find marks — reapply on the fresh DOM.
+    hits = [];
+    if (finding && query) requestAnimationFrame(() => applyFind(query));
 
     body.querySelectorAll<HTMLAnchorElement>("a[href]").forEach((a) => {
       const href = a.getAttribute("href") ?? "";
@@ -132,6 +232,22 @@
 </script>
 
 <div class="preview">
+  {#if finding}
+    <div class="pv-find">
+      <input
+        bind:this={findInput}
+        bind:value={query}
+        oninput={() => applyFind(query)}
+        onkeydown={onFindKey}
+        placeholder="Find in preview"
+        spellcheck="false"
+      />
+      <span class="pv-count">{hitTotal ? `${hitCur}/${hitTotal}` : query.trim() ? "0" : ""}</span>
+      <button title="Previous (⇧↵)" onclick={() => stepFind(-1)} aria-label="Previous match">↑</button>
+      <button title="Next (↵)" onclick={() => stepFind(1)} aria-label="Next match">↓</button>
+      <button title="Close (Esc)" onclick={closeFind} aria-label="Close find">✕</button>
+    </div>
+  {/if}
   {#if result.frontmatter}
     <div class="frontmatter-card">
       <div class="fm-title">frontmatter</div>

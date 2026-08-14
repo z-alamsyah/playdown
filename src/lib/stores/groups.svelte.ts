@@ -259,11 +259,22 @@ class GroupsStore {
     this.transformActiveJson((v) => JSON.stringify(v));
   }
 
-  /** Focus the active editor and open its find panel. Returns false if the
-   *  active pane isn't an editor (e.g. preview/image). */
+  /** Preview find requests: PreviewPane of the matching group opens its find
+   *  bar whenever seq bumps (⌘F while a markdown preview is active). */
+  previewFind = $state<{ groupId: string; seq: number }>({ groupId: "", seq: 0 });
+
+  /** Focus the active editor and open its find panel — or, when the active
+   *  pane is a markdown preview, open the preview's find bar. Returns false
+   *  only when there's nothing searchable (e.g. image/diff pane). */
   openSearch(): boolean {
     const g = this.activeGroup;
-    if (!g || g.viewMode !== "edit") return false;
+    if (!g) return false;
+    if (g.viewMode !== "edit") {
+      const t = g.activeIndex >= 0 ? g.tabs[g.activeIndex] : null;
+      if (!t || fileKind(t.path) !== "markdown") return false;
+      this.previewFind = { groupId: g.id, seq: this.previewFind.seq + 1 };
+      return true;
+    }
     const view = this.editors.get(g.id);
     if (!view) return false;
     view.focus();
@@ -424,7 +435,11 @@ class GroupsStore {
 
   toggleViewActive() {
     const g = this.activeGroup;
-    if (g) g.viewMode = g.viewMode === "edit" ? "preview" : "edit";
+    if (!g) return;
+    // Preview is markdown-only; ⌘E on other kinds is a no-op.
+    const t = g.activeIndex >= 0 ? g.tabs[g.activeIndex] : null;
+    if (!t || fileKind(t.path) !== "markdown") return;
+    g.viewMode = g.viewMode === "edit" ? "preview" : "edit";
   }
 
   // ---- closing -------------------------------------------------------------
