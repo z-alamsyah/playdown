@@ -7,7 +7,7 @@
 
 A lightweight **workbench for agentic workflows**: the markdown your agents read and write, and the terminals they run in — side by side. Works with **any coding agent**, because Playdown remotes the terminal, not the harness.
 
-![Playdown demo — annotate a PRD, send the review to a coding agent in the built-in terminal, watch it work](docs/assets/demo.gif)
+![Playdown demo — annotate a PRD, send the review to a coding agent in the built-in terminal, watch it work](assets/demo.gif)
 
 ## What is this?
 
@@ -19,7 +19,7 @@ Playdown puts the two halves of agent-driven work in one light window: the markd
 | RAM (idle) | ~70–100 MB | 300–500+ MB |
 | Startup | < 0.5s | 1–3s |
 
-🌐 **[Landing page & download →](https://z-alamsyah.github.io/playdown/)**
+🌐 **[Landing page & download →](https://playdown.z-alamsyah.online/)**
 
 ## Install
 
@@ -71,17 +71,18 @@ pnpm tauri build      # bundle for your OS
 
 **The editor:**
 
-- 📂 **Folder tree** — open a folder (or drag one onto the window); all files including dotfiles, nested indent guides, drag-and-drop to move, Finder/file-manager drops to import
+- 📂 **Folder tree** — open a folder (or drag one onto the window); all files including dotfiles, nested indent guides, drag-and-drop to move (the destination folder lights up under the pointer), Finder/file-manager drops to import
 - 🗂️ **Tabs & split panes** — drag tabs to reorder, move between groups, or split to any edge (VSCode-style, nested, resizable); `⌘\` splits right
-- ✏️ **Edit ⇄ Preview** — per-pane toggle; edit left, live preview right
+- ✏️ **Edit ⇄ Preview** — per-pane toggle for markdown (`⌘E`); edit left, live preview right, and `⌘F` finds inside the rendered view too
 - 🔎 **Quick Open** (`⌘P`), **global search** across file contents (`⌘⇧F`), **find/replace** in the editor (`⌘F`), **go to line** (`⌘G`)
 - ⚡ **Command palette** (`⌘⇧P`) — every action, keybinding, and recent folder
 - 🧭 **Outline**, 🧩 **frontmatter-aware** (foldable in editor, metadata card in preview), ✨ **GFM**, 🧜 **Mermaid** (lazy-loaded)
 - 🔡 **JSON tools** — format (`⇧⌥F`), minify (`⌘⇧M`), optional key sorting, parse errors pointed at the exact line
+- 🎨 **Syntax colors for source files** — `.ts`, `.js`, `.go`, `.rs`, `.py`, `.html`, `.css` and ~30 more (highlighting only: no compiler, no diagnostics)
 - 🖼️ **Image preview** — png/jpg/gif/webp/svg/bmp/ico/avif inline; `.html` files open in your browser
 - 🗃️ **File ops** — new file/folder, rename, delete to Trash, copy full/relative path
 - ⌨️ **`playdown` CLI** — `playdown .` opens a folder from your shell; `--update` pulls the latest release
-- 🪟 **Multi-window** (File ▸ New Window) with per-window titlebar colors, 🔍 **zoom**, ⚙️ **settings** (`⌘,`) with fully rebindable shortcuts, 🌗 **GitHub-style dark/light themes**, session persisted across restarts
+- 🪟 **Multi-window** (File ▸ New Window) with per-window titlebar colors, 🔍 **zoom**, ⚙️ **settings** (`⌘,`) with fully rebindable shortcuts, 🌗 **three GitHub palettes** (dark / dark dimmed / light) with an **adaptive mode** that follows the clock, session persisted across restarts
 
 **The deal:**
 
