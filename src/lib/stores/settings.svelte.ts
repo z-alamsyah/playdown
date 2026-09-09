@@ -36,9 +36,21 @@ export const TITLEBAR_COLORS: Record<TitlebarColor, [string, string]> = {
   green: ["#15803d", "#ffffff"],
 };
 
+/** Theme for a wall-clock time, used by the adaptive ("auto") mode:
+ *  dark 18:00-06:00, dimmed 06:01-10:00, light 10:01-15:00, dimmed 15:01-17:59. */
+export function themeForTime(now = new Date()): Theme {
+  const t = now.getHours() * 60 + now.getMinutes();
+  if (t >= 18 * 60 || t <= 6 * 60) return "dark";
+  if (t <= 10 * 60) return "dim";
+  if (t <= 15 * 60) return "light";
+  return "dim";
+}
+
 /** Persisted preferences: theme, layout, zoom, keymap, and editor session. */
 class Settings {
   theme = $state<Theme>("dark");
+  /** Follow the clock instead of a fixed choice (see themeForTime). */
+  themeAuto = $state(false);
   lastFolder = $state<string | null>(null);
   session = $state<SessionState | null>(null);
   sidebarSide = $state<Side>("left");
@@ -83,6 +95,7 @@ class Settings {
       const theme = (
         rawTheme === "github-dark" ? "dark" : rawTheme === "github-light" ? "light" : rawTheme
       ) as Theme | undefined;
+      const themeAuto = await store.get<boolean>("themeAuto");
       const lastFolder = await store.get<string>(storeKey("lastFolder"));
       const session = await store.get<SessionState>(storeKey("session"));
       const sidebarSide = await store.get<Side>("sidebarSide");
@@ -133,6 +146,10 @@ class Settings {
       if (terminalSide) this.terminalSide = terminalSide;
       if (typeof terminalOpen === "boolean") this.terminalOpen = terminalOpen;
       if (theme) this.theme = theme;
+      if (themeAuto === true) {
+        this.themeAuto = true;
+        this.theme = themeForTime();
+      }
       if (lastFolder) this.lastFolder = lastFolder;
       if (session) this.session = session;
       if (sidebarSide) this.sidebarSide = sidebarSide;
@@ -144,7 +161,27 @@ class Settings {
       console.error("Failed to load settings:", e);
     }
     this.apply();
+    this.watchClock();
     this.loaded = true;
+  }
+
+  /** Re-evaluate the adaptive theme every minute, and whenever the window
+   *  regains focus (a laptop can sleep through several boundaries). The timer
+   *  lives as long as the window does. */
+  private clockTimer: ReturnType<typeof setInterval> | undefined;
+  private watchClock() {
+    if (this.clockTimer) return;
+    this.clockTimer = setInterval(() => this.syncClockTheme(), 60_000);
+    window.addEventListener("focus", () => this.syncClockTheme());
+  }
+
+  /** Adopt the hour's theme, without persisting it (the choice is the mode). */
+  private syncClockTheme() {
+    if (!this.themeAuto) return;
+    const next = themeForTime();
+    if (next === this.theme) return;
+    this.theme = next;
+    this.apply();
   }
 
   apply() {
@@ -269,17 +306,30 @@ class Settings {
 
   async setTheme(theme: Theme) {
     this.theme = theme;
+    this.themeAuto = false; // picking a theme by hand leaves adaptive mode
     this.apply();
     await this.persist("theme", theme);
+    await this.persist("themeAuto", false);
   }
 
-  /** True for the dark theme (drives editor/terminal/mermaid colors). */
+  async setThemeAuto(on: boolean) {
+    this.themeAuto = on;
+    await this.persist("themeAuto", on);
+    if (!on) return;
+    this.theme = themeForTime();
+    this.apply();
+  }
+
+  /** True for both dark palettes (drives editor/terminal/mermaid colors). */
   get isDark(): boolean {
-    return this.theme === "dark";
+    return this.theme !== "light";
   }
 
+  /** Status-bar cycle: dark -> dimmed -> light. */
   toggleTheme() {
-    void this.setTheme(this.theme === "dark" ? "light" : "dark");
+    const next: Theme =
+      this.theme === "dark" ? "dim" : this.theme === "dim" ? "light" : "dark";
+    void this.setTheme(next);
   }
 
   async setLastFolder(path: string | null) {

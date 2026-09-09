@@ -2,7 +2,7 @@
   import type { FileNode } from "../types";
   import { groups } from "../stores/groups.svelte";
   import { ui } from "../stores/ui.svelte";
-  import { nodeMenuItems, moveEntry, openInBrowser } from "../fileActions";
+  import { nodeMenuItems, openInBrowser, parentDir } from "../fileActions";
   import { iconFor } from "../fileIcons";
   import { isHtml } from "../fileKind";
   import { draggable } from "../actions/dnd";
@@ -12,7 +12,6 @@
   let { nodes, depth }: { nodes: FileNode[]; depth: number } = $props();
 
   let expanded = $state<Record<string, boolean>>({});
-  let dragOver = $state<string | null>(null);
 
   function toggle(path: string) {
     expanded[path] = !expanded[path];
@@ -25,21 +24,6 @@
     ui.showMenu(e.clientX, e.clientY, nodeMenuItems(node));
   }
 
-  // Pointer-based move: highlight a folder while a node is dragged over it;
-  // dropping moves the dragged file/folder into it.
-  function onDirEnter(node: FileNode) {
-    if (drag.data?.kind === "node" && drag.data.path !== node.path) dragOver = node.path;
-  }
-  function onDirLeave(node: FileNode) {
-    if (dragOver === node.path) dragOver = null;
-  }
-  function onDirUp(e: PointerEvent, node: FileNode) {
-    if (drag.data?.kind !== "node") return;
-    e.stopPropagation(); // don't also fall through to the root-drop container
-    const src = drag.data.path;
-    dragOver = null;
-    if (src !== node.path) void moveEntry(src, node.path);
-  }
 </script>
 
 {#snippet ficon(name: string, isDir: boolean)}
@@ -53,12 +37,9 @@
         <button
           class="row dir"
           class:selected={ui.selectedPath === node.path}
-          class:drop-target={dragOver === node.path}
+          class:drop-target={drag.dropPath === node.path}
           data-path={node.path}
           use:draggable={() => ({ kind: "node", path: node.path, label: node.name })}
-          onpointerenter={() => onDirEnter(node)}
-          onpointerleave={() => onDirLeave(node)}
-          onpointerup={(e) => onDirUp(e, node)}
           onclick={(e) => {
             ui.select(node.path, true);
             (e.currentTarget as HTMLElement).focus();
@@ -82,6 +63,8 @@
           class="row file"
           class:active={groups.activeTab?.path === node.path}
           class:selected={ui.selectedPath === node.path}
+          class:drop-into={drag.dropPath !== null && drag.dropPath === parentDir(node.path)}
+          data-path={node.path}
           use:draggable={() => ({ kind: "node", path: node.path, label: node.name })}
           onclick={(e) => {
             ui.select(node.path, false);

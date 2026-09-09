@@ -42,6 +42,41 @@ export async function moveEntry(src: string, destDir: string) {
   }
 }
 
+/** Destination folder for a sidebar drag at viewport point (x, y), or null
+ *  when dropping there would do nothing. Hovering a folder row targets that
+ *  folder; hovering a file row targets the folder that holds it (so a near
+ *  miss still lands where the user aimed); empty tree space targets the
+ *  workspace root. Rejects the moves `moveEntry` would refuse, so a highlight
+ *  never promises a move that won't happen. */
+export function resolveDropTarget(
+  x: number,
+  y: number,
+  srcPath: string,
+): { dir: string; label: string } | null {
+  const el = document.elementFromPoint(x, y) as HTMLElement | null;
+  if (!el) return null;
+  const row = el.closest<HTMLElement>(".row[data-path]");
+  let dir: string | null = null;
+  if (row?.dataset.path) {
+    dir = row.classList.contains("dir")
+      ? row.dataset.path
+      : parentDir(row.dataset.path);
+  } else if (el.closest(".tree")) {
+    dir = workspace.root;
+  }
+  if (!dir) return null;
+
+  const src = srcPath.replace(/[/\\]+$/, "");
+  // Same guards as moveEntry: no move into itself or a descendant, and no
+  // move into the folder it already sits in.
+  if (dir === src || dir.startsWith(src + "/")) return null;
+  if (dir === parentDir(src)) return null;
+  return {
+    dir,
+    label: dir === workspace.root ? workspace.rootName || "root" : baseName(dir),
+  };
+}
+
 /** Copy files dropped from the OS file manager (Finder/Explorer) into `dir`.
  *  The webview can't see their source paths, so read the bytes and write them
  *  via Rust. Names that collide get a " (n)" suffix. */

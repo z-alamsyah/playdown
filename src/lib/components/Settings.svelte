@@ -97,10 +97,18 @@
       <div class="setting-row">
         <span>Theme</span>
         <div class="seg">
-          <button class:on={settings.theme === "dark"} onclick={() => settings.setTheme("dark")}>🌙 Dark</button>
-          <button class:on={settings.theme === "light"} onclick={() => settings.setTheme("light")}>☀️ Light</button>
+          <button class:on={settings.themeAuto} onclick={() => settings.setThemeAuto(true)}>Auto</button>
+          <button class:on={!settings.themeAuto && settings.theme === "dark"} onclick={() => settings.setTheme("dark")}>🌙 Dark</button>
+          <button class:on={!settings.themeAuto && settings.theme === "dim"} onclick={() => settings.setTheme("dim")}>🌗 Dimmed</button>
+          <button class:on={!settings.themeAuto && settings.theme === "light"} onclick={() => settings.setTheme("light")}>☀️ Light</button>
         </div>
       </div>
+      {#if settings.themeAuto}
+        <p class="muted small">
+          Follows the clock: dark 18:00-06:00, dimmed 06:01-10:00 and 15:01-17:59,
+          light 10:01-15:00. Right now: <b>{settings.theme}</b>.
+        </p>
+      {/if}
       <div class="setting-row">
         <span>Title bar color</span>
         <div class="swatches">

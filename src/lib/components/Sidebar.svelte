@@ -3,7 +3,14 @@
   import { workspace } from "../stores/workspace.svelte";
   import { settings } from "../stores/settings.svelte";
   import { ui } from "../stores/ui.svelte";
-  import { promptNewEntry, promptRename, selectedDir, moveEntry, closeFolder } from "../fileActions";
+  import {
+    promptNewEntry,
+    promptRename,
+    selectedDir,
+    moveEntry,
+    closeFolder,
+    resolveDropTarget,
+  } from "../fileActions";
   import FileTree from "./FileTree.svelte";
   import { drag } from "../stores/drag.svelte";
 
@@ -17,12 +24,24 @@
     }
   }
 
-  // Drop a dragged node on empty tree space → move it to the workspace root.
-  // (Folder rows stop propagation, so this only fires outside a folder.)
-  function onTreeUp() {
-    if (drag.data?.kind === "node" && workspace.root) {
-      void moveEntry(drag.data.path, workspace.root);
+  // While a sidebar node is dragged, resolve the folder under the pointer and
+  // publish it — the tree highlights exactly that folder, and the drop below
+  // uses the same value, so what you see is where the file lands.
+  $effect(() => {
+    const d = drag.data;
+    if (!d || d.kind !== "node") {
+      drag.dropPath = null;
+      drag.dropLabel = "";
+      return;
     }
+    const hit = resolveDropTarget(drag.x, drag.y, d.path);
+    drag.dropPath = hit?.dir ?? null;
+    drag.dropLabel = hit?.label ?? "";
+  });
+
+  function onTreeUp() {
+    const d = drag.data;
+    if (d?.kind === "node" && drag.dropPath) void moveEntry(d.path, drag.dropPath);
   }
 
   const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
@@ -97,7 +116,11 @@
   </div>
 
   <!-- svelte-ignore a11y_no_static_element_interactions -->
-  <div class="tree" onpointerup={onTreeUp}>
+  <div
+  class="tree"
+  class:root-drop={drag.dropPath !== null && drag.dropPath === workspace.root}
+  onpointerup={onTreeUp}
+>
     {#if workspace.loading}
       <div class="muted">Loading…</div>
     {:else if !workspace.root}

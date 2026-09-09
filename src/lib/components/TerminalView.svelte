@@ -60,6 +60,8 @@
   }
 
   function theme() {
+    if (settings.theme === "dim")
+      return { background: "#22272e", foreground: "#adbac7", cursor: "#539bf5", selectionBackground: "#264f78" };
     return settings.isDark
       ? { background: "#0d1117", foreground: "#e6edf3", cursor: "#58a6ff", selectionBackground: "#1c4f9c" }
       : { background: "#ffffff", foreground: "#1f2328", cursor: "#0969da", selectionBackground: "#b6d3f5" };

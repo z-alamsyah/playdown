@@ -285,7 +285,9 @@
 <PromptModal />
 
 {#if drag.data}
-  <div class="drag-ghost" style="left: {drag.x}px; top: {drag.y}px">{drag.data.label}</div>
+  <div class="drag-ghost" style="left: {drag.x}px; top: {drag.y}px">
+    {drag.data.label}{#if drag.dropLabel}<span class="ghost-dest"> -&gt; {drag.dropLabel}</span>{/if}
+  </div>
 {/if}
 
 {#if ui.notice}

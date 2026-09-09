@@ -72,8 +72,12 @@
       </button>
     {/if}
     <button class="status-btn" title="Toggle terminal (Ctrl+`)" onclick={() => settings.toggleTerminal()}>❯_</button>
-    <button class="status-btn" title="Toggle theme" onclick={() => settings.toggleTheme()}>
-      {settings.isDark ? "🌙" : "☀️"}
+    <button
+      class="status-btn"
+      title={settings.themeAuto ? `Theme: ${settings.theme} (auto)` : "Cycle theme"}
+      onclick={() => settings.toggleTheme()}
+    >
+      {settings.theme === "dark" ? "🌙" : settings.theme === "dim" ? "🌗" : "☀️"}
     </button>
     <button class="status-btn" title="Settings (⌘,)" onclick={onOpenSettings}>⚙</button>
   </div>
