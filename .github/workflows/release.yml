@@ -12,7 +12,35 @@ permissions:
   contents: write
 
 jobs:
+  # Create the draft ONCE. Letting each matrix job create it (tauri-action's
+  # default) is a race: on a fast run two of them both find no draft and each
+  # make their own release for the same tag, so the assets end up split across
+  # two releases and the published one is missing platforms.
+  create-release:
+    runs-on: ubuntu-latest
+    outputs:
+      release_id: ${{ steps.mk.outputs.id }}
+    steps:
+      - name: Create or reuse the draft release
+        id: mk
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.ref_name }}
+          REPO: ${{ github.repository }}
+        run: |
+          # A draft isn't reachable via /releases/tags/<tag>, so scan the list.
+          id=$(gh api "repos/$REPO/releases?per_page=100" \
+                 --jq ".[] | select(.tag_name==\"$TAG\") | .id" | sed -n 1p)
+          if [ -z "$id" ]; then
+            id=$(gh api --method POST "repos/$REPO/releases" \
+                   -f tag_name="$TAG" -f name="Playdown $TAG" \
+                   -f body="See the assets below to download and install." \
+                   -F draft=true -F prerelease=false --jq .id)
+          fi
+          echo "id=$id" >> "$GITHUB_OUTPUT"
+
   build:
+    needs: create-release
     strategy:
       fail-fast: false
       matrix:
@@ -65,17 +93,13 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tagName: ${{ github.ref_name }}
-          releaseName: "Playdown ${{ github.ref_name }}"
-          releaseBody: "See the assets below to download and install."
-          releaseDraft: true
-          prerelease: false
+          releaseId: ${{ needs.create-release.outputs.release_id }}
           args: ${{ matrix.args }}
 
   # Flip the draft to a published "latest" release only after every platform
   # has finished uploading, so `releases/latest` never serves a partial set.
   publish:
-    needs: build
+    needs: [create-release, build]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -83,4 +107,7 @@ jobs:
       - name: Publish the release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release edit "${{ github.ref_name }}" --repo "${{ github.repository }}" --draft=false --latest
+        run: |
+          gh api --method PATCH \
+            "repos/${{ github.repository }}/releases/${{ needs.create-release.outputs.release_id }}" \
+            -F draft=false -F make_latest=true --jq '"published: " + .html_url'
