@@ -9,7 +9,6 @@
     selectedDir,
     moveEntry,
     closeFolder,
-    resolveDropTarget,
   } from "../fileActions";
   import FileTree from "./FileTree.svelte";
   import { drag } from "../stores/drag.svelte";
@@ -24,21 +23,8 @@
     }
   }
 
-  // While a sidebar node is dragged, resolve the folder under the pointer and
-  // publish it — the tree highlights exactly that folder, and the drop below
-  // uses the same value, so what you see is where the file lands.
-  $effect(() => {
-    const d = drag.data;
-    if (!d || d.kind !== "node") {
-      drag.dropPath = null;
-      drag.dropLabel = "";
-      return;
-    }
-    const hit = resolveDropTarget(drag.x, drag.y, d.path);
-    drag.dropPath = hit?.dir ?? null;
-    drag.dropLabel = hit?.label ?? "";
-  });
-
+  // The destination folder is resolved on every pointer move (see dnd.ts) and
+  // published on the drag store, so the highlight and this drop always agree.
   function onTreeUp() {
     const d = drag.data;
     if (d?.kind === "node" && drag.dropPath) void moveEntry(d.path, drag.dropPath);

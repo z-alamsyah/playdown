@@ -1,4 +1,5 @@
 import { drag, type DragData } from "../stores/drag.svelte";
+import { resolveDropTarget } from "../fileActions";
 
 const THRESHOLD = 5; // px before a press becomes a drag
 
@@ -45,8 +46,14 @@ export function draggable(node: HTMLElement, getData: () => DragData | null) {
       dragging = true;
       drag.data = d;
     }
+    const d0 = drag.data;
     drag.x = e.clientX;
     drag.y = e.clientY;
+    if (d0?.kind === "node") {
+      const hit = resolveDropTarget(e.clientX, e.clientY, d0.path);
+      drag.dropPath = hit?.dir ?? null;
+      drag.dropLabel = hit?.label ?? "";
+    }
   }
 
   function up() {
@@ -56,7 +63,11 @@ export function draggable(node: HTMLElement, getData: () => DragData | null) {
       // Swallow the click a drag would otherwise fire on the source element.
       window.addEventListener("click", swallow, { capture: true, once: true });
       setTimeout(() => window.removeEventListener("click", swallow, true), 0);
-      requestAnimationFrame(() => (drag.data = null));
+      requestAnimationFrame(() => {
+        drag.data = null;
+        drag.dropPath = null;
+        drag.dropLabel = "";
+      });
     }
   }
 
