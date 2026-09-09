@@ -51,7 +51,7 @@ export async function moveEntry(src: string, destDir: string) {
 export function resolveDropTarget(
   x: number,
   y: number,
-  srcPath: string,
+  srcPath: string | null,
 ): { dir: string; label: string } | null {
   const el = document.elementFromPoint(x, y) as HTMLElement | null;
   if (!el) return null;
@@ -65,16 +65,17 @@ export function resolveDropTarget(
     dir = workspace.root;
   }
   if (!dir) return null;
+  const label = () =>
+    dir === workspace.root ? workspace.rootName || "root" : baseName(dir!);
+  // A drag from Finder/Explorer has no source inside the tree: any folder goes.
+  if (!srcPath) return { dir, label: label() };
 
   const src = srcPath.replace(/[/\\]+$/, "");
   // Same guards as moveEntry: no move into itself or a descendant, and no
   // move into the folder it already sits in.
   if (dir === src || dir.startsWith(src + "/")) return null;
   if (dir === parentDir(src)) return null;
-  return {
-    dir,
-    label: dir === workspace.root ? workspace.rootName || "root" : baseName(dir),
-  };
+  return { dir, label: label() };
 }
 
 /** Copy files dropped from the OS file manager (Finder/Explorer) into `dir`.

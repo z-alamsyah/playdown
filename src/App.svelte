@@ -20,6 +20,7 @@
   import { groups } from "./lib/stores/groups.svelte";
   import { terminal } from "./lib/stores/terminal.svelte";
   import { drag } from "./lib/stores/drag.svelte";
+  import { resolveDropTarget } from "./lib/fileActions";
   import { annotations } from "./lib/stores/annotations.svelte";
   import { settings } from "./lib/stores/settings.svelte";
   import { keymap, IS_MAC, type Action } from "./lib/stores/keymap.svelte";
@@ -79,12 +80,34 @@
     // Drag from Finder/Explorer: a folder opens as the workspace; a file dropped
     // onto a sidebar folder is copied in, otherwise it opens as a tab.
     unlistenDrop = await getCurrentWebview().onDragDropEvent(async (e) => {
+      // OS drag positions are physical pixels; the DOM is in CSS pixels, which
+      // the webview's own zoom also scales. Dividing by dpr alone drifted with
+      // zoom (a few rows off near the bottom of the tree at 95%), which is how
+      // drops used to miss the folder under the cursor.
+      const scale = (window.devicePixelRatio || 1) * (settings.zoom || 1);
+      const hitAt = (pos?: { x: number; y: number } | null) =>
+        pos ? resolveDropTarget(pos.x / scale, pos.y / scale, null) : null;
+
+      // Show the destination while the OS drag is still in the air, the same
+      // highlight an in-app drag gets.
+      if (e.payload.type === "enter" || e.payload.type === "over") {
+        const hit = hitAt(e.payload.position);
+        drag.dropPath = hit?.dir ?? null;
+        drag.dropLabel = hit?.label ?? "";
+        return;
+      }
+      if (e.payload.type === "leave") {
+        drag.dropPath = null;
+        drag.dropLabel = "";
+        return;
+      }
       if (e.payload.type !== "drop") return;
-      const pos = e.payload.position;
-      const dpr = window.devicePixelRatio || 1;
-      const el = pos ? document.elementFromPoint(pos.x / dpr, pos.y / dpr) : null;
-      const targetDir =
-        el?.closest<HTMLElement>(".row.dir[data-path]")?.dataset.path ?? null;
+      // Land where the highlight promised: a folder row, the folder holding a
+      // hovered file, or the workspace root for empty tree space. Outside the
+      // sidebar there is no target, so the file opens as a tab instead.
+      const targetDir = hitAt(e.payload.position)?.dir ?? null;
+      drag.dropPath = null;
+      drag.dropLabel = "";
       let openedFolder = false;
       let imported = false;
       for (const p of e.payload.paths) {
