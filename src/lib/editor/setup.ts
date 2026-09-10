@@ -26,7 +26,7 @@ import {
   foldGutter,
   foldKeymap,
 } from "@codemirror/language";
-import { githubDark, githubLight } from "./githubTheme";
+import { githubDark, githubDimmed, githubLight } from "./githubTheme";
 import type { Theme } from "../types";
 import { frontmatterExtension } from "./frontmatter";
 
@@ -35,7 +35,11 @@ export const themeCompartment = new Compartment();
 
 /** Editor theme extension for an app theme (GitHub palettes). */
 export function editorTheme(theme: Theme): Extension {
-  return theme === "dark" ? githubDark : githubLight;
+  // Test for the one light palette, so any future theme defaults to a dark
+  // editor: dimmed used to fall through to the light theme here, which put
+  // near-black text on the dimmed canvas and made documents unreadable.
+  if (theme === "light") return githubLight;
+  return theme === "dim" ? githubDimmed : githubDark;
 }
 
 /** Holds the markdown extension so code-fence grammars (language-data) can be
