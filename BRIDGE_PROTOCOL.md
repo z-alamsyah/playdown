@@ -13,7 +13,8 @@ status) to companion processes — e.g. [`playdown-remote`](https://github.com/z
 
 | op | fields | effect |
 |---|---|---|
-| `hello` | `v` (int) | handshake; server replies `hello` |
+| `hello` | `v` (int), `name`?, `version`?, `pid`? | handshake; server replies `hello`. The optional fields identify the companion in Playdown's Settings. |
+| `status` | `viewers` (int) | how many devices this companion is serving; shown in Settings |
 | `sessions` | — | server replies a `sessions` snapshot |
 | `attach` | `id` | server replies `scrollback` for that session (~64KB replay) |
 | `input` | `id`, `data` (b64) | write bytes to the session's PTY |
@@ -30,6 +31,7 @@ status) to companion processes — e.g. [`playdown-remote`](https://github.com/z
 | `scrollback` | `id`, `data` (b64) | recent output replay after `attach` |
 | `output` | `id`, `data` (b64) | live PTY output (all sessions; filter client-side) |
 | `error` | `msg` | request failed |
+| `bye` | - | the user disconnected this companion from Playdown's Settings. Stop; do not reconnect. |
 
 `sessions[]` items: `{ id, label, title?, custom?, status }` where `status ∈ idle | working | blocked | done` (see the agent-status heuristics in Playdown).
 

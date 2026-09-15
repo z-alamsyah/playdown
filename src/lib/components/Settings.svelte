@@ -27,6 +27,50 @@
   const INSTALL_CMD =
     "curl -fsSL https://raw.githubusercontent.com/z-alamsyah/playdown-remote/main/install.sh | sh";
 
+  type Tab = "general" | "terminal" | "remote" | "shortcuts";
+  const TABS: { id: Tab; label: string }[] = [
+    { id: "general", label: "General" },
+    { id: "terminal", label: "Terminal & agents" },
+    { id: "remote", label: "Remote" },
+    { id: "shortcuts", label: "Shortcuts" },
+  ];
+  let tab = $state<Tab>("general");
+
+  // Companions attached to the bridge (playdown-remote and friends), polled
+  // while the Remote tab is open so the list reflects reality.
+  type Client = {
+    id: number;
+    name: string;
+    version: string;
+    pid?: number;
+    viewers: number;
+    since: number;
+  };
+  let clients = $state<Client[]>([]);
+  async function refreshClients() {
+    try {
+      clients = await invoke<Client[]>("bridge_clients");
+    } catch {
+      clients = [];
+    }
+  }
+  $effect(() => {
+    if (tab !== "remote" || !settings.remoteAccess) return;
+    void refreshClients();
+    const t = setInterval(refreshClients, 2000);
+    return () => clearInterval(t);
+  });
+  async function disconnectClient(id: number) {
+    await invoke("bridge_disconnect", { id }).catch(() => {});
+    setTimeout(refreshClients, 300);
+  }
+  function connectedFor(since: number): string {
+    const s = Math.max(0, Math.floor(Date.now() / 1000 - since));
+    if (s < 60) return `${s}s`;
+    if (s < 3600) return `${Math.floor(s / 60)}m`;
+    return `${Math.floor(s / 3600)}h ${Math.floor((s % 3600) / 60)}m`;
+  }
+
   let qrTab = $state(0);
   let phoneError = $state("");
   // Known at open time so the install note shows BEFORE the user toggles.
@@ -91,7 +135,16 @@
     <button class="icon-btn" title="Close" onclick={onClose}>×</button>
   </div>
 
+  <div class="settings-tabs" role="tablist">
+    {#each TABS as t (t.id)}
+      <button class:on={tab === t.id} role="tab" aria-selected={tab === t.id} onclick={() => (tab = t.id)}>
+        {t.label}
+      </button>
+    {/each}
+  </div>
+
   <div class="modal-body">
+    {#if tab === "general"}
     <section>
       <h3>Appearance</h3>
       <div class="setting-row">
@@ -151,6 +204,9 @@
       <p class="muted small">Then run <code>playdown .</code> in any folder from your terminal.</p>
     </section>
 
+    {/if}
+
+    {#if tab === "terminal"}
     <section>
       <h3>Terminal &amp; agents</h3>
       <div class="setting-row">
@@ -169,6 +225,12 @@
           spellcheck="false"
         />
       </div>
+    </section>
+    {/if}
+
+    {#if tab === "remote"}
+    <section>
+      <h3>Remote access</h3>
       <div class="setting-row">
         <span>Remote access <span class="muted-inline">(phone · Telegram · companions)</span></span>
         <div class="seg">
@@ -231,11 +293,45 @@
           />
         </div>
       {/if}
+      {#if settings.remoteAccess}
+        <div class="section-head">
+          <h3>Connected</h3>
+          <button class="link-btn" onclick={refreshClients}>refresh</button>
+        </div>
+        {#if clients.length === 0}
+          <p class="muted small">Nothing attached to the bridge right now.</p>
+        {:else}
+          {#each clients as c (c.id)}
+            <div class="setting-row client-row">
+              <span>
+                <b>{c.name}</b>
+                <span class="muted-inline">
+                  {[
+                    c.version ? `v${c.version}` : null,
+                    `${c.viewers} device${c.viewers === 1 ? "" : "s"}`,
+                    `up ${connectedFor(c.since)}`,
+                    c.pid ? `pid ${c.pid}` : null,
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")}
+                </span>
+              </span>
+              <button class="btn-secondary" onclick={() => disconnectClient(c.id)}>Disconnect</button>
+            </div>
+          {/each}
+          <p class="muted small">
+            Disconnecting tells the companion to stop, so it exits instead of
+            reconnecting — no process left behind.
+          </p>
+        {/if}
+      {/if}
       {#if settings.remoteAccess && settings.bridgeSocket}
         <p class="muted small">Bridge socket: <code>{settings.bridgeSocket}</code> — protocol in <code>BRIDGE_PROTOCOL.md</code></p>
       {/if}
     </section>
+    {/if}
 
+    {#if tab === "general"}
     <section>
       <h3>JSON</h3>
       <div class="setting-row">
@@ -247,6 +343,9 @@
       </div>
     </section>
 
+    {/if}
+
+    {#if tab === "shortcuts"}
     <section>
       <div class="section-head">
         <h3>Shortcuts</h3>
@@ -268,5 +367,6 @@
       </div>
       <p class="muted small">Click a shortcut, then press the new combo. Esc cancels.</p>
     </section>
+    {/if}
   </div>
 </div>

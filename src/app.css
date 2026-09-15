@@ -1357,6 +1357,41 @@ kbd {
   padding: 8px 18px 18px;
   overflow-y: auto;
 }
+/* Settings tab strip: the panel used to be one long scroll. */
+.settings-tabs {
+  display: flex;
+  gap: 2px;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  overflow-x: auto;
+}
+.settings-tabs button {
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--text-muted);
+  font-size: 13px;
+  padding: 9px 12px;
+  white-space: nowrap;
+}
+.settings-tabs button:hover {
+  color: var(--text);
+}
+.settings-tabs button.on {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+  font-weight: 600;
+}
+/* One attached companion, with room for its details to wrap. */
+.client-row {
+  align-items: flex-start;
+  gap: 12px;
+}
+.client-row > span {
+  min-width: 0;
+  line-height: 1.5;
+}
 .modal-body section {
   margin-top: 18px;
 }

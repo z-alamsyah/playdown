@@ -7,6 +7,7 @@
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::collections::HashMap;
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
 use tauri::{Emitter, State};
 use tokio::sync::broadcast;
@@ -42,6 +43,30 @@ struct SessionBuf {
     carry: Vec<u8>,
 }
 
+/// A companion currently attached to the socket (playdown-remote, or anything
+/// else speaking the protocol). Surfaced in Settings so the user can see what
+/// is connected and cut it loose.
+#[derive(Clone, Serialize)]
+pub struct ClientInfo {
+    pub id: u64,
+    /// Self-reported in `hello`; "unknown" until then.
+    pub name: String,
+    pub version: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub pid: Option<u32>,
+    /// Devices attached to that companion (phones on its web UI).
+    pub viewers: u32,
+    /// Unix seconds since the connection opened.
+    pub since: u64,
+}
+
+fn now_secs() -> u64 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_secs())
+        .unwrap_or(0)
+}
+
 pub struct BridgeHub {
     /// Live PTY output, tee'd from the reader threads: (session id, bytes).
     output_tx: broadcast::Sender<(String, Vec<u8>)>,
@@ -50,6 +75,12 @@ pub struct BridgeHub {
     sessions: Mutex<Vec<SessionInfo>>,
     scrollback: Mutex<HashMap<String, SessionBuf>>,
     server: Mutex<Option<tauri::async_runtime::JoinHandle<()>>>,
+    /// Attached companions, keyed by connection id.
+    clients: Mutex<HashMap<u64, ClientInfo>>,
+    next_client_id: AtomicU64,
+    /// Broadcasts the id of a connection the user asked to drop; the matching
+    /// serve_client task says goodbye and closes.
+    kick_tx: broadcast::Sender<u64>,
 }
 
 impl Default for BridgeHub {
@@ -60,6 +91,9 @@ impl Default for BridgeHub {
             sessions: Mutex::new(Vec::new()),
             scrollback: Mutex::new(HashMap::new()),
             server: Mutex::new(None),
+            clients: Mutex::new(HashMap::new()),
+            next_client_id: AtomicU64::new(1),
+            kick_tx: broadcast::channel(16).0,
         }
     }
 }
@@ -219,6 +253,22 @@ pub async fn bridge_start(
     }
 }
 
+/// Companions currently attached, newest last.
+#[tauri::command]
+pub fn bridge_clients(hub: State<Hub>) -> Vec<ClientInfo> {
+    let mut v: Vec<ClientInfo> = hub.clients.lock().unwrap().values().cloned().collect();
+    v.sort_by_key(|c| c.id);
+    v
+}
+
+/// Drop one companion. It is told to go ("bye") before the socket closes, so a
+/// supervised playdown-remote exits instead of reconnecting - disconnecting
+/// here really does end the process.
+#[tauri::command]
+pub fn bridge_disconnect(hub: State<Hub>, id: u64) {
+    let _ = hub.kick_tx.send(id);
+}
+
 #[tauri::command]
 pub fn bridge_stop(hub: State<Hub>) {
     if let Some(handle) = hub.server.lock().unwrap().take() {
@@ -243,7 +293,22 @@ async fn serve_client(
     let mut lines = BufReader::new(read_half).lines();
     let mut output_rx = hub.output_tx.subscribe();
     let mut event_rx = hub.event_tx.subscribe();
+    let mut kick_rx = hub.kick_tx.subscribe();
     let b64 = base64::engine::general_purpose::STANDARD;
+
+    // Register the connection so Settings can list it (and drop it).
+    let client_id = hub.next_client_id.fetch_add(1, Ordering::Relaxed);
+    hub.clients.lock().unwrap().insert(
+        client_id,
+        ClientInfo {
+            id: client_id,
+            name: "unknown".into(),
+            version: String::new(),
+            pid: None,
+            viewers: 0,
+            since: now_secs(),
+        },
+    );
 
     // Greet + initial snapshot.
     let hello = json!({
@@ -263,7 +328,22 @@ async fn serve_client(
                     continue;
                 };
                 match req["op"].as_str().unwrap_or("") {
-                    "hello" => { /* greeted already */ }
+                    "hello" => {
+                        // Greeted already; record whatever it tells us about itself.
+                        let mut cs = hub.clients.lock().unwrap();
+                        if let Some(c) = cs.get_mut(&client_id) {
+                            if let Some(n) = req["name"].as_str() { c.name = n.to_string(); }
+                            if let Some(v) = req["version"].as_str() { c.version = v.to_string(); }
+                            if let Some(p) = req["pid"].as_u64() { c.pid = Some(p as u32); }
+                        }
+                    }
+                    "status" => {
+                        // How many devices that companion is serving right now.
+                        if let Some(v) = req["viewers"].as_u64() {
+                            let mut cs = hub.clients.lock().unwrap();
+                            if let Some(c) = cs.get_mut(&client_id) { c.viewers = v as u32; }
+                        }
+                    }
                     "sessions" => {
                         let ev = sessions_event(&hub.sessions.lock().unwrap().clone());
                         write.write_all(format!("{ev}\n").as_bytes()).await?;
@@ -337,8 +417,22 @@ async fn serve_client(
                     Err(_) => break,
                 }
             }
+            kicked = kick_rx.recv() => {
+                match kicked {
+                    // Say goodbye before closing: a supervised companion takes
+                    // this as "you're done" and exits instead of reconnecting.
+                    Ok(id) if id == client_id => {
+                        let _ = write.write_all(b"{\"ev\":\"bye\"}\n").await;
+                        break;
+                    }
+                    Ok(_) => continue,
+                    Err(broadcast::error::RecvError::Lagged(_)) => continue,
+                    Err(_) => break,
+                }
+            }
         }
     }
+    hub.clients.lock().unwrap().remove(&client_id);
     Ok(())
 }
 

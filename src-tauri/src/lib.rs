@@ -575,6 +575,8 @@ pub fn run() {
             bridge::bridge_start,
             bridge::bridge_stop,
             bridge::bridge_sync,
+            bridge::bridge_clients,
+            bridge::bridge_disconnect,
             remote::remote_companion_installed,
             remote::remote_companion_running,
             remote::remote_companion_start,
