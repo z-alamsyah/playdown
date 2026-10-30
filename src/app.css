@@ -34,6 +34,14 @@
   --hl-number: #79c0ff;
   --hl-variable: #ffa657;
   --hl-function: #d2a8ff;
+  --diff-add-line: rgba(46, 160, 67, 0.22);
+  --diff-add-word: rgba(46, 160, 67, 0.55);
+  --diff-add-edge: #3fb950;
+  --diff-del-line: rgba(248, 81, 73, 0.2);
+  --diff-del-word: rgba(248, 81, 73, 0.55);
+  --diff-del-edge: #f85149;
+  --diff-mod-line: rgba(210, 153, 34, 0.16);
+  --diff-mod-edge: #d29922;
 }
 
 /* Dimmed — GitHub Dark Dimmed palette (Primer). Softer than dark; used at
@@ -60,6 +68,14 @@
   --hl-number: #6cb6ff;
   --hl-variable: #f69d50;
   --hl-function: #dcbdfb;
+  --diff-add-line: rgba(87, 171, 90, 0.24);
+  --diff-add-word: rgba(87, 171, 90, 0.6);
+  --diff-add-edge: #57ab5a;
+  --diff-del-line: rgba(229, 83, 75, 0.22);
+  --diff-del-word: rgba(229, 83, 75, 0.6);
+  --diff-del-edge: #e5534b;
+  --diff-mod-line: rgba(198, 144, 38, 0.18);
+  --diff-mod-edge: #c69026;
 }
 
 /* Light — GitHub Light palette (Primer) */
@@ -85,6 +101,14 @@
   --hl-number: #0550ae;
   --hl-variable: #953800;
   --hl-function: #8250df;
+  --diff-add-line: #dafbe1;
+  --diff-add-word: #8ddb9a;
+  --diff-add-edge: #1a7f37;
+  --diff-del-line: #ffebe9;
+  --diff-del-word: #ffaba8;
+  --diff-del-edge: #cf222e;
+  --diff-mod-line: #fff4cc;
+  --diff-mod-edge: #bf8700;
 }
 
 * {
@@ -2100,27 +2124,90 @@ kbd {
   min-height: 0;
   overflow: hidden;
 }
+/* ONE scroller for both sides. The merge view is built to scroll its two
+   editors together; the global `.cm-editor { height: 100% }` plus a per-editor
+   overflow turned each side into its own scroller, so they drifted apart. */
 .diff-body .cm-mergeView {
   height: 100%;
+  overflow-y: auto;
 }
-.diff-body .cm-mergeViewEditors {
-  height: 100%;
+.diff-body .cm-editor {
+  height: auto;
 }
-.diff-body .cm-mergeViewEditor {
-  overflow: auto;
+
+/* Change kinds (tagged in DiffPane.svelte). The merge view paints every
+   change the same faint tint; these tell removed, added and edited lines
+   apart, each with a solid edge so they read even on a long scroll. */
+.diff-body .cm-mergeView .cm-changedLine {
+  background: none;
 }
-/* GitHub diff colors */
-.cm-merge-a .cm-changedLine {
-  background: rgba(248, 81, 73, 0.13);
+.diff-body .cm-line.pd-removed {
+  background: var(--diff-del-line);
+  box-shadow: inset 3px 0 0 var(--diff-del-edge);
 }
-.cm-merge-a .cm-changedText {
-  background: rgba(248, 81, 73, 0.35);
+.diff-body .cm-line.pd-added {
+  background: var(--diff-add-line);
+  box-shadow: inset 3px 0 0 var(--diff-add-edge);
 }
-.cm-merge-b .cm-changedLine {
-  background: rgba(63, 185, 80, 0.13);
+.diff-body .cm-line.pd-edited-old,
+.diff-body .cm-line.pd-edited-new {
+  background: var(--diff-mod-line);
+  box-shadow: inset 3px 0 0 var(--diff-mod-edge);
 }
-.cm-merge-b .cm-changedText {
-  background: rgba(63, 185, 80, 0.35);
+/* A wholly new or wholly removed line is already one solid band; skip the
+   per-character marks inside it so it doesn't render as a box on a box. */
+.diff-body .cm-mergeView .cm-line.pd-added .cm-changedText,
+.diff-body .cm-mergeView .cm-line.pd-removed .cm-changedText {
+  background: none;
+}
+/* Inside an edited line: the exact characters that went away / came in,
+   as solid blocks instead of the default hairline underline. */
+.diff-body .cm-mergeView .cm-merge-a .cm-changedText {
+  background: var(--diff-del-word);
+  border-radius: 2px;
+}
+.diff-body .cm-mergeView .cm-merge-b .cm-changedText {
+  background: var(--diff-add-word);
+  border-radius: 2px;
+}
+
+/* Legend in the header */
+.diff-side.added {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.diff-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.diff-legend {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--text-faint);
+  font-family: var(--sans);
+  font-size: 11px;
+  flex-shrink: 0;
+}
+.diff-legend .k {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  margin-left: 6px;
+}
+.diff-legend .k.pd-removed {
+  background: var(--diff-del-line);
+  box-shadow: inset 2px 0 0 var(--diff-del-edge);
+}
+.diff-legend .k.pd-added {
+  background: var(--diff-add-line);
+  box-shadow: inset 2px 0 0 var(--diff-add-edge);
+}
+.diff-legend .k.pd-edited {
+  background: var(--diff-mod-line);
+  box-shadow: inset 2px 0 0 var(--diff-mod-edge);
 }
 .cm-collapsedLines {
   background: var(--bg-soft);
