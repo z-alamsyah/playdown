@@ -36,10 +36,10 @@
   // Every TerminalView stays mounted in the one stage (moving it to another
   // parent would remount it and kill its PTY), so a split is pure placement:
   // the two visible sessions get inline left/width (or top/height) and the
-  // rest stay hidden. Split along the panel's long side - columns when docked
-  // at the bottom, rows when docked on the right.
+  // rest stay hidden. Side by side or stacked is the user's pick (rotate
+  // button), defaulting to the panel's long side.
   let stage: HTMLDivElement;
-  const cols = $derived(settings.terminalSide === "bottom");
+  const cols = $derived(settings.terminalSplitCols);
 
   function paneLayout(id: string): string {
     const ids = terminal.splitIds;
@@ -145,6 +145,18 @@
       </svg>
     {/if}
   </button>
+  {#if terminal.splitIds}
+    <button
+      class="icon-btn"
+      title={cols ? "Stack panes (top / bottom)" : "Panes side by side"}
+      onclick={() => settings.rotateTerminalSplit()}
+      aria-label="Rotate split"
+    >
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 12a9 9 0 1 1-3-6.7" /><path d="M21 3v6h-6" />
+      </svg>
+    </button>
+  {/if}
   <button class="icon-btn" title="New terminal (⌘T)" onclick={() => terminal.create()} aria-label="New terminal">
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
       <path d="M5 12h14" /><path d="M12 5v14" />

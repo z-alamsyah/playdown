@@ -66,6 +66,22 @@ class TerminalStore {
     return this.sessions.find((s) => s.id === this.activeId) ?? null;
   }
 
+  // ---- shared glyph atlas ------------------------------------------------
+  /** xterm's WebGL renderers share ONE glyph atlas between terminals with the
+   *  same font and colours. Clearing it for one view leaves every other view
+   *  drawing glyphs that are gone (garbled text in the other split pane), so
+   *  a clear is done for every visible view at once. */
+  private painters = new Set<() => void>();
+
+  onRepaint(fn: () => void): () => void {
+    this.painters.add(fn);
+    return () => this.painters.delete(fn);
+  }
+
+  repaintAll() {
+    for (const fn of this.painters) fn();
+  }
+
   // ---- split view --------------------------------------------------------
   /** Two sessions shown side by side, or null for a single pane. When split,
    *  `activeId` is whichever of the two has keyboard focus. */

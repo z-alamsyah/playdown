@@ -27,6 +27,7 @@
   let ro: ResizeObserver | undefined;
   let onWinResize: (() => void) | undefined;
   let onWinFocus: (() => void) | undefined;
+  let offRepaint: (() => void) | undefined;
   let fitTimer: ReturnType<typeof setTimeout> | undefined;
   let ready = $state(false);
 
@@ -114,6 +115,13 @@
         console.error("terminal renderer addon failed:", e);
       }
     }
+  }
+
+  // Rebuild glyphs and redraw everything (see terminal.repaintAll).
+  function repaint() {
+    if (!visible || !renderer || !term) return;
+    renderer.clearTextureAtlas?.();
+    term.refresh(0, Math.max(0, term.rows - 1));
   }
 
   function detachRenderer() {
@@ -256,6 +264,7 @@
     ro.observe(el);
     onWinResize = () => scheduleFit();
     window.addEventListener("resize", onWinResize);
+    offRepaint = terminal.onRepaint(repaint);
     ready = true;
     if (visible) doFit();
     if (focused) term.focus();
@@ -270,9 +279,10 @@
       requestAnimationFrame(() => {
         void (async () => {
           await attachRenderer();
-          renderer?.clearTextureAtlas?.();
           doFit();
-          if (term) term.refresh(0, Math.max(0, term.rows - 1));
+          // Not just this view: the atlas is shared, and the other split
+          // pane would keep drawing from the glyphs this clear throws away.
+          terminal.repaintAll();
         })();
       });
     } else {
@@ -337,6 +347,7 @@
   });
 
   onDestroy(() => {
+    offRepaint?.();
     unlistenOut?.();
     unlistenExit?.();
     ro?.disconnect();

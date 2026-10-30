@@ -46,6 +46,14 @@
         terminal.toggleSplit();
       },
     });
+    if (terminal.splitIds) {
+      cmds.push({
+        id: "rotateTerminalSplit",
+        label: settings.terminalSplitCols ? "Stack terminal panes (top / bottom)" : "Terminal panes side by side",
+        hint: "",
+        run: () => void settings.rotateTerminalSplit(),
+      });
+    }
     if (workspace.root) {
       cmds.push({ id: "closeFolder", label: "Close folder", hint: "", run: () => void closeFolder() });
     }

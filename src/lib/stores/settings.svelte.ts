@@ -64,6 +64,9 @@ class Settings {
   terminalHeight = $state(240);
   terminalWidth = $state(480);
   terminalSide = $state<Dock>("bottom");
+  /** Split terminal panes side by side ("cols") or stacked ("rows"); null
+   *  follows the dock - side by side at the bottom, stacked on the right. */
+  terminalSplitDir = $state<"cols" | "rows" | null>(null);
   annotationWidth = $state(280);
   sidebarWidth = $state(250);
   jsonSortKeys = $state(false);
@@ -147,6 +150,8 @@ class Settings {
       if (typeof terminalHeight === "number") this.terminalHeight = terminalHeight;
       if (typeof terminalWidth === "number") this.terminalWidth = terminalWidth;
       if (terminalSide) this.terminalSide = terminalSide;
+      const terminalSplitDir = await store.get<string>("terminalSplitDir");
+      if (terminalSplitDir === "cols" || terminalSplitDir === "rows") this.terminalSplitDir = terminalSplitDir;
       if (typeof terminalOpen === "boolean") this.terminalOpen = terminalOpen;
       if (theme) this.theme = theme;
       if (themeAuto === true) {
@@ -309,6 +314,16 @@ class Settings {
 
   toggleTerminalSide() {
     void this.setTerminalSide(this.terminalSide === "bottom" ? "right" : "bottom");
+  }
+
+  /** Are split terminal panes laid out side by side right now? */
+  get terminalSplitCols(): boolean {
+    return this.terminalSplitDir ? this.terminalSplitDir === "cols" : this.terminalSide === "bottom";
+  }
+
+  async rotateTerminalSplit() {
+    this.terminalSplitDir = this.terminalSplitCols ? "rows" : "cols";
+    await this.persist("terminalSplitDir", this.terminalSplitDir);
   }
 
   async setTheme(theme: Theme) {
