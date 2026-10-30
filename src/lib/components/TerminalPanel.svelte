@@ -32,6 +32,48 @@
 
   const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
 
+  // ---- split view ----------------------------------------------------------
+  // Every TerminalView stays mounted in the one stage (moving it to another
+  // parent would remount it and kill its PTY), so a split is pure placement:
+  // the two visible sessions get inline left/width (or top/height) and the
+  // rest stay hidden. Split along the panel's long side - columns when docked
+  // at the bottom, rows when docked on the right.
+  let stage: HTMLDivElement;
+  const cols = $derived(settings.terminalSide === "bottom");
+
+  function paneLayout(id: string): string {
+    const ids = terminal.splitIds;
+    if (!ids) return "";
+    const i = ids.indexOf(id);
+    if (i < 0) return "";
+    const r = terminal.splitRatio * 100;
+    if (cols) {
+      return i === 0
+        ? `right:auto;width:calc(${r}% - 2px)`
+        : `left:calc(${r}% + 2px)`;
+    }
+    return i === 0
+      ? `bottom:auto;height:calc(${r}% - 2px)`
+      : `top:calc(${r}% + 2px)`;
+  }
+
+  function startSplitDrag(e: PointerEvent) {
+    e.preventDefault();
+    const rect = stage.getBoundingClientRect();
+    const move = (ev: PointerEvent) => {
+      const f = cols
+        ? (ev.clientX - rect.left) / rect.width
+        : (ev.clientY - rect.top) / rect.height;
+      terminal.splitRatio = clamp(f, 0.2, 0.8);
+    };
+    const up = () => {
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", up);
+    };
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
+  }
+
   function startResize(e: PointerEvent) {
     e.preventDefault();
     const bottom = settings.terminalSide === "bottom";
@@ -58,6 +100,7 @@
   <button
     class="term-tab"
     class:on={s.id === terminal.activeId}
+    class:shown={s.id !== terminal.activeId && terminal.isVisible(s.id)}
     title="{i + 1}: {terminal.displayName(s)} — {s.status} (double-click to rename)"
     onclick={() => terminal.setActive(s.id)}
     ondblclick={() => promptRename(s.id, terminal.displayName(s))}
@@ -85,6 +128,23 @@
 {/snippet}
 
 {#snippet actions()}
+  <button
+    class="icon-btn"
+    class:on={terminal.splitIds !== null}
+    title={terminal.splitIds ? "Unsplit terminal (⌘\\ in terminal)" : "Split terminal (⌘\\ in terminal)"}
+    onclick={() => terminal.toggleSplit()}
+    aria-label="Split terminal"
+  >
+    {#if cols}
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="4" width="18" height="16" rx="2" /><line x1="12" y1="4" x2="12" y2="20" />
+      </svg>
+    {:else}
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="4" width="18" height="16" rx="2" /><line x1="3" y1="12" x2="21" y2="12" />
+      </svg>
+    {/if}
+  </button>
   <button class="icon-btn" title="New terminal (⌘T)" onclick={() => terminal.create()} aria-label="New terminal">
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
       <path d="M5 12h14" /><path d="M12 5v14" />
@@ -136,10 +196,27 @@
     {/if}
 
     <!-- Persistent stage — kept mounted across dock toggles so PTYs survive. -->
-    <div class="terminal-stage">
+    <div class="terminal-stage" bind:this={stage}>
       {#each terminal.sessions as s (s.id)}
-        <TerminalView id={s.id} active={s.id === terminal.activeId} />
+        <TerminalView
+          id={s.id}
+          visible={terminal.isVisible(s.id)}
+          focused={s.id === terminal.activeId}
+          layout={paneLayout(s.id)}
+        />
       {/each}
+      {#if terminal.splitIds}
+        <button
+          class="term-split-divider"
+          class:cols
+          style={cols
+            ? `left:calc(${terminal.splitRatio * 100}% - 2px)`
+            : `top:calc(${terminal.splitRatio * 100}% - 2px)`}
+          aria-label="Resize split"
+          onpointerdown={startSplitDrag}
+          ondblclick={() => (terminal.splitRatio = 0.5)}
+        ></button>
+      {/if}
       {#if terminal.sessions.length === 0}
         <div class="muted term-empty">No terminal sessions</div>
       {/if}

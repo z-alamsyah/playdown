@@ -1824,6 +1824,16 @@ kbd {
 .terminal-tabs-list .term-tab .tt-name {
   flex: 1;
 }
+/* The rule above clears tab backgrounds for the vertical list and, coming
+   later in the file, also wiped the focused tab's cream fill - leaving its
+   dark label on a dark background. Restore it. */
+.terminal-tabs-list .term-tab.on {
+  background: #e8dcc0;
+  border-color: #e8dcc0;
+}
+.terminal-tabs-list .term-tab.shown {
+  border-color: #e8dcc0;
+}
 
 .terminal-stage {
   flex: 1;
@@ -1841,6 +1851,46 @@ kbd {
 .term-view.hidden {
   visibility: hidden;
   pointer-events: none;
+}
+/* Split view: the focused pane gets an accent line along its top so it is
+   clear which side the keyboard goes to. */
+.term-view.split-pane {
+  box-shadow: inset 0 2px 0 transparent;
+}
+.term-view.split-pane.focused {
+  box-shadow: inset 0 2px 0 var(--accent);
+}
+.term-split-divider {
+  position: absolute;
+  z-index: 2;
+  padding: 0;
+  border: none;
+  background: var(--border);
+  left: 0;
+  right: 0;
+  height: 4px;
+  cursor: row-resize;
+}
+.term-split-divider.cols {
+  top: 0;
+  bottom: 0;
+  left: auto;
+  right: auto;
+  width: 4px;
+  height: auto;
+  cursor: col-resize;
+}
+.term-split-divider:hover {
+  background: var(--accent);
+}
+/* The other session on screen in a split: marked, but quieter than the
+   focused tab. */
+.term-tab.shown {
+  border-color: #e8dcc0;
+  color: var(--text);
+}
+.icon-btn.on {
+  color: var(--accent);
 }
 .term-empty {
   display: grid;

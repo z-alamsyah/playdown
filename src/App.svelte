@@ -193,7 +193,12 @@
       case "toggleView": groups.toggleViewActive(); break;
       case "toggleSidebar": settings.toggleSidebar(); break;
       case "toggleOutline": settings.toggleOutline(); break;
-      case "splitRight": groups.splitActive("right"); break;
+      // ⌘\ splits whatever has focus: the terminal when you're in it, else
+      // the editor (same key VSCode uses for both).
+      case "splitRight":
+        if (terminalFocused()) terminal.toggleSplit();
+        else groups.splitActive("right");
+        break;
       case "nextTab": groups.nextTab(); break;
       case "prevTab": groups.prevTab(); break;
       case "focusNextGroup": groups.focusAdjacentGroup(1); break;

@@ -66,6 +66,37 @@ class TerminalStore {
     return this.sessions.find((s) => s.id === this.activeId) ?? null;
   }
 
+  // ---- split view --------------------------------------------------------
+  /** Two sessions shown side by side, or null for a single pane. When split,
+   *  `activeId` is whichever of the two has keyboard focus. */
+  splitIds = $state<string[] | null>(null);
+  /** Share of the panel the first pane takes (0.2 - 0.8). */
+  splitRatio = $state(0.5);
+
+  /** Is this session on screen right now (either pane when split)? */
+  isVisible(id: string): boolean {
+    return this.splitIds ? this.splitIds.includes(id) : id === this.activeId;
+  }
+
+  /** Toggle the split. Splitting shows the focused session next to another
+   *  tab (the one after it), or a fresh shell when it is the only tab; the
+   *  new pane takes focus. Unsplitting keeps the focused session. */
+  toggleSplit() {
+    if (this.splitIds) {
+      this.splitIds = null;
+      return;
+    }
+    const cur = this.activeId ?? this.sessions[0]?.id;
+    if (!cur) return;
+    const i = this.sessions.findIndex((s) => s.id === cur);
+    const other =
+      this.sessions.length > 1
+        ? this.sessions[(i + 1) % this.sessions.length].id
+        : this.create();
+    this.splitIds = [cur, other];
+    this.activeId = other;
+  }
+
   create(initialCommand?: string): string {
     const id = uid();
     this.sessions.push({
@@ -79,7 +110,7 @@ class TerminalStore {
       quietTicks: 0,
       waitHold: false,
     });
-    this.activeId = id;
+    this.setActive(id);
     this.ensureTicker();
     this.syncBridge();
     return id;
@@ -121,7 +152,15 @@ class TerminalStore {
     }, 50);
   }
 
+  /** Bring a session forward. When split: a session already on screen just
+   *  takes focus; any other tab replaces the focused pane. */
   setActive(id: string) {
+    if (this.splitIds && !this.splitIds.includes(id)) {
+      const next = [...this.splitIds];
+      const at = next.indexOf(this.activeId ?? "");
+      next[at < 0 ? 0 : at] = id;
+      this.splitIds = next;
+    }
     this.activeId = id;
     // Deliberately does NOT clear statuses: "done" stays green and "blocked"
     // stays red until you actually respond — glancing isn't resolving.
@@ -156,7 +195,7 @@ class TerminalStore {
     if (
       was !== "blocked" &&
       settings.agentNotifications &&
-      (!document.hasFocus() || s.id !== this.activeId)
+      (!document.hasFocus() || !this.isVisible(s.id))
     ) {
       void notifyNative("Agent needs input", this.displayName(s));
     }
@@ -214,7 +253,9 @@ class TerminalStore {
         } else if (s.status === "working") {
           if (s.burstBytes < 128) {
             if (++s.quietTicks >= 4) {
-              const next = s.id === this.activeId ? "idle" : "done";
+              // On screen (either split pane) it's simply idle; a background
+              // tab that went quiet after working is "done".
+              const next = this.isVisible(s.id) ? "idle" : "done";
               this.setStatus(s, next);
               s.quietTicks = 0;
               if (next === "done" && settings.agentNotifications && !document.hasFocus()) {
@@ -236,7 +277,7 @@ class TerminalStore {
     const i = this.sessions.findIndex((s) => s.id === this.activeId);
     const cur = i < 0 ? 0 : i;
     const next = (cur + dir + this.sessions.length) % this.sessions.length;
-    this.activeId = this.sessions[next].id;
+    this.setActive(this.sessions[next].id);
   }
 
   /** Remove a session; <TerminalView> unmount kills its PTY. */
@@ -244,6 +285,13 @@ class TerminalStore {
     const i = this.sessions.findIndex((s) => s.id === id);
     if (i < 0) return;
     this.sessions.splice(i, 1);
+    // Closing either half of a split goes back to one pane, showing the half
+    // that is left.
+    if (this.splitIds?.includes(id)) {
+      const left = this.splitIds.find((x) => x !== id) ?? null;
+      this.splitIds = null;
+      if (left) this.activeId = left;
+    }
     if (this.activeId === id) {
       this.activeId = this.sessions[Math.max(0, i - 1)]?.id ?? null;
     }

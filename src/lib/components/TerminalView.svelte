@@ -6,7 +6,16 @@
   import { settings } from "../stores/settings.svelte";
   import { terminal } from "../stores/terminal.svelte";
 
-  let { id, active }: { id: string; active: boolean } = $props();
+  // `visible`: on screen (draws, keeps a GPU renderer, fits to its box).
+  // `focused`: owns the keyboard (focus requests, paste hand-offs). With a
+  // split there are two visible sessions but only one focused.
+  // `layout`: inline placement inside the stage when split; empty = fill.
+  let {
+    id,
+    visible,
+    focused,
+    layout = "",
+  }: { id: string; visible: boolean; focused: boolean; layout?: string } = $props();
 
   let el: HTMLDivElement;
   // xterm is lazy-loaded, so keep these loosely typed.
@@ -26,7 +35,7 @@
   function scheduleFit() {
     clearTimeout(fitTimer);
     fitTimer = setTimeout(() => {
-      if (active) doFit();
+      if (visible) doFit();
     }, 120);
   }
 
@@ -142,7 +151,7 @@
     fit = new FitAddon();
     term.loadAddon(fit);
     term.open(el);
-    if (active) await attachRenderer();
+    if (visible) await attachRenderer();
 
     // Open the PTY only once the container has a real size, so the shell
     // starts at the correct width (no narrow initial layout).
@@ -235,7 +244,7 @@
     // here — focusing to select/read history must not jump the viewport.
     // Same-size resizes are no-op ioctls, so this is free in the common case.
     const reclaim = () => {
-      if (term && active) void invoke("term_resize", { id, cols: term.cols, rows: term.rows });
+      if (term && visible) void invoke("term_resize", { id, cols: term.cols, rows: term.rows });
     };
     term.textarea?.addEventListener("focus", reclaim);
     // Also on app focus — returning to the laptop without re-focusing the
@@ -248,10 +257,8 @@
     onWinResize = () => scheduleFit();
     window.addEventListener("resize", onWinResize);
     ready = true;
-    if (active) {
-      doFit();
-      term.focus();
-    }
+    if (visible) doFit();
+    if (focused) term.focus();
   });
 
   // On activation: (re)attach the GPU renderer and force a full repaint —
@@ -259,14 +266,13 @@
   // canvas after visibility:hidden. On deactivation: release the renderer.
   $effect(() => {
     if (!ready) return;
-    if (active) {
+    if (visible) {
       requestAnimationFrame(() => {
         void (async () => {
           await attachRenderer();
           renderer?.clearTextureAtlas?.();
           doFit();
           if (term) term.refresh(0, Math.max(0, term.rows - 1));
-          term?.focus();
         })();
       });
     } else {
@@ -274,10 +280,18 @@
     }
   });
 
-  // Grab keyboard focus when the app asks (⌘J focus-switch).
+  // Take the keyboard when this session becomes the focused one, and when the
+  // app asks for it (⌘J focus-switch).
   $effect(() => {
     terminal.focusSeq;
-    if (active && ready) term?.focus();
+    if (focused && ready) requestAnimationFrame(() => term?.focus());
+  });
+
+  // A split pane resizing (divider drag, split on/off) changes this box
+  // without a window resize; refit for the new size.
+  $effect(() => {
+    void layout;
+    if (ready && visible) scheduleFit();
   });
 
   // Paste text on request (annotation prompt hand-off). xterm's paste()
@@ -287,7 +301,7 @@
   // must never replay it when they later become active.
   $effect(() => {
     const req = terminal.pasteReq;
-    if (req && active && ready && term) {
+    if (req && focused && ready && term) {
       terminal.consumePaste();
       term.paste(req.text);
       term.focus();
@@ -302,7 +316,7 @@
       term.options.fontSize = Math.max(8, Math.round(BASE_FONT / z));
       requestAnimationFrame(() => {
         renderer?.clearTextureAtlas?.();
-        if (active) doFit();
+        if (visible) doFit();
       });
     }
   });
@@ -331,4 +345,13 @@
   });
 </script>
 
-<div class="term-view" class:hidden={!active} bind:this={el}></div>
+<!-- svelte-ignore a11y_no_static_element_interactions -->
+<div
+  class="term-view"
+  class:hidden={!visible}
+  class:split-pane={layout !== ""}
+  class:focused={layout !== "" && focused}
+  style={layout}
+  bind:this={el}
+  onpointerdown={() => terminal.setActive(id)}
+></div>

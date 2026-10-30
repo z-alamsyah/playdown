@@ -37,6 +37,15 @@
         terminal.create(settings.agentCommand);
       },
     });
+    cmds.push({
+      id: "splitTerminal",
+      label: terminal.splitIds ? "Unsplit terminal" : "Split terminal",
+      hint: "⌘\\ in terminal",
+      run: () => {
+        if (!settings.terminalOpen) void settings.setTerminalOpen(true);
+        terminal.toggleSplit();
+      },
+    });
     if (workspace.root) {
       cmds.push({ id: "closeFolder", label: "Close folder", hint: "", run: () => void closeFolder() });
     }
