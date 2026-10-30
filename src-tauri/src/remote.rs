@@ -8,16 +8,46 @@
 use std::io::BufRead;
 use std::process::{Child, Command, Stdio};
 use std::sync::{Arc, Mutex};
-use tauri::State;
+use tauri::{Emitter, Manager, State};
+
+/// The running companion, kept with what it was started with and its latest
+/// addresses so another window (or a reopened Settings) can show the same QR
+/// instead of restarting it - a restart mints a new token and voids every
+/// link already scanned.
+pub struct Running {
+    child: Child,
+    args: Option<String>,
+    /// Latest JSON line carrying `urls`: the ready line, then any updates.
+    info: Arc<Mutex<String>>,
+}
 
 #[derive(Default)]
-pub struct Companion(pub Mutex<Option<Child>>);
+pub struct Companion(pub Mutex<Option<Running>>);
 
 /// Kill + reap the supervised companion (idempotent).
 pub fn shutdown(slot: &Companion) {
-    if let Some(mut child) = slot.0.lock().unwrap().take() {
-        let _ = child.kill();
-        let _ = child.wait(); // reap — no zombies
+    if let Some(mut run) = slot.0.lock().unwrap().take() {
+        let _ = run.child.kill();
+        let _ = run.child.wait(); // reap — no zombies
+    }
+}
+
+/// Is the companion in the slot still the one that owns `info`? (A pid could
+/// be reused; the `info` handle is unique to each spawn.)
+fn is_current(app: &tauri::AppHandle, info: &Arc<Mutex<String>>) -> bool {
+    let state = app.state::<Companion>();
+    let slot = state.0.lock().unwrap();
+    slot.as_ref().is_some_and(|r| Arc::ptr_eq(&r.info, info))
+}
+
+/// Take the companion out of the slot if it is still the one owning `info`.
+fn take_if(app: &tauri::AppHandle, info: &Arc<Mutex<String>>) -> Option<Running> {
+    let state = app.state::<Companion>();
+    let mut slot = state.0.lock().unwrap();
+    if slot.as_ref().is_some_and(|r| Arc::ptr_eq(&r.info, info)) {
+        slot.take()
+    } else {
+        None
     }
 }
 
@@ -53,7 +83,7 @@ pub fn remote_companion_installed() -> bool {
 pub fn remote_companion_running(state: State<Companion>) -> bool {
     let mut slot = state.0.lock().unwrap();
     match slot.as_mut() {
-        Some(c) => match c.try_wait() {
+        Some(r) => match r.child.try_wait() {
             Ok(None) => true,
             _ => {
                 *slot = None;
@@ -65,16 +95,30 @@ pub fn remote_companion_running(state: State<Companion>) -> bool {
 }
 
 #[tauri::command]
-pub fn remote_companion_stop(state: State<Companion>) {
+pub fn remote_companion_stop(app: tauri::AppHandle, state: State<Companion>) {
     shutdown(&state);
+    // Other windows still show the old QR; tell them it is gone.
+    let _ = app.emit("remote://companion-exit", ());
 }
 
 /// Spawn the companion and return its JSON ready line (urls + QR art).
 #[tauri::command]
 pub fn remote_companion_start(
+    app: tauri::AppHandle,
     state: State<Companion>,
     extra_args: Option<String>,
+    restart: Option<bool>,
 ) -> Result<String, String> {
+    // Every window asks for the companion when it loads. Hand back the live
+    // one unless asked to restart (or the arguments changed).
+    if !restart.unwrap_or(false) {
+        let mut slot = state.0.lock().unwrap();
+        if let Some(run) = slot.as_mut() {
+            if run.args == extra_args && matches!(run.child.try_wait(), Ok(None)) {
+                return Ok(run.info.lock().unwrap().clone());
+            }
+        }
+    }
     shutdown(&state); // restart semantics — a stale instance would hold the port
 
     let bin = find_binary().ok_or(
@@ -89,7 +133,7 @@ pub fn remote_companion_start(
         .stdin(Stdio::null())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped());
-    if let Some(extra) = extra_args {
+    if let Some(extra) = &extra_args {
         for a in extra.split_whitespace() {
             cmd.arg(a);
         }
@@ -116,25 +160,48 @@ pub fn remote_companion_start(
         }
     });
 
-    // First stdout line = ready handshake; keep draining afterwards.
+    // First stdout line = ready handshake. Later lines carrying `urls` are
+    // address changes (Tailscale or Wi-Fi coming up after start): keep them
+    // and pass them to every window. EOF means the companion exited.
+    let info: Arc<Mutex<String>> = Arc::new(Mutex::new(String::new()));
+    let info2 = info.clone();
     let (tx, rx) = std::sync::mpsc::channel();
+    let (filed_tx, filed_rx) = std::sync::mpsc::channel::<()>();
     std::thread::spawn(move || {
         let mut reader = std::io::BufReader::new(stdout);
         let mut line = String::new();
         let _ = reader.read_line(&mut line);
+        *info2.lock().unwrap() = line.clone();
         let _ = tx.send(line);
+        // Wait until the child is in the slot (or start gave up on it), so an
+        // instant exit below can't miss it.
+        let _ = filed_rx.recv();
         loop {
-            let mut sink = String::new();
-            match reader.read_line(&mut sink) {
+            let mut next = String::new();
+            match reader.read_line(&mut next) {
                 Ok(0) | Err(_) => break,
                 _ => {}
             }
+            if next.contains("\"urls\"") && is_current(&app, &info2) {
+                *info2.lock().unwrap() = next.clone();
+                let _ = app.emit("remote://companion", next);
+            }
+        }
+        // It exited on its own (Disconnect, crash): reap it now rather than
+        // leave a zombie until remote access is turned off, and tell the UI
+        // its QR is dead. A companion we replaced or stopped is not ours to
+        // report.
+        if let Some(mut run) = take_if(&app, &info2) {
+            let _ = run.child.kill(); // already gone in practice
+            let _ = run.child.wait();
+            let _ = app.emit("remote://companion-exit", ());
         }
     });
 
     match rx.recv_timeout(std::time::Duration::from_secs(5)) {
         Ok(line) if line.contains("\"ready\"") => {
-            *state.0.lock().unwrap() = Some(child);
+            *state.0.lock().unwrap() = Some(Running { child, args: extra_args, info });
+            let _ = filed_tx.send(());
             Ok(line)
         }
         _ => {

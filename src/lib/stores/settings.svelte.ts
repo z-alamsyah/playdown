@@ -1,6 +1,7 @@
 import { LazyStore } from "@tauri-apps/plugin-store";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
 import type { Theme, Side, TitlebarColor, Dock } from "../types";
 import type { SessionState } from "./groups.svelte";
 
@@ -85,6 +86,8 @@ class Settings {
   } | null>(null);
   /** Remote is on but the companion binary isn't installed (bridge-only). */
   companionMissing = $state(false);
+  /** Remote is on but the companion exited on its own (Disconnect, crash). */
+  companionStopped = $state(false);
   loaded = $state(false);
 
   async load() {
@@ -248,19 +251,22 @@ class Settings {
   /** Start the companion if its binary is installed; a missing binary is not
    *  an error (bridge stays useful for manual/custom companions). Throws on
    *  real start failures (port busy, bad args). */
-  async tryStartCompanion() {
+  async tryStartCompanion(restart = false) {
     this.companionMissing = false;
+    this.companionStopped = false;
     const installed = await invoke<boolean>("remote_companion_installed");
     if (!installed) {
       this.companionMissing = true;
       this.companion = null;
       return;
     }
+    // Not a restart by default: the running companion is reused, so every
+    // window shows the same (still valid) QR.
     const line = await invoke<string>("remote_companion_start", {
       extraArgs: this.remoteArgs.trim() || null,
+      restart,
     });
-    const info = JSON.parse(line);
-    this.companion = { urls: info.urls ?? [] };
+    this.companion = { urls: JSON.parse(line).urls ?? [] };
   }
 
   async setRemoteAccess(v: boolean) {
@@ -273,6 +279,7 @@ class Settings {
       this.remoteAccess = false;
       this.companion = null;
       this.companionMissing = false;
+      this.companionStopped = false;
       await invoke("remote_companion_stop").catch(() => {});
       await invoke("bridge_stop").catch(() => {});
       this.bridgeSocket = null;
@@ -285,7 +292,7 @@ class Settings {
     await this.persist("remoteArgs", v);
     // Apply live: the start command has restart semantics.
     if (this.remoteAccess && this.companion) {
-      await this.tryStartCompanion();
+      await this.tryStartCompanion(true);
     }
   }
 
@@ -390,3 +397,19 @@ class Settings {
 }
 
 export const settings = new Settings();
+
+// The companion re-announces its addresses when Tailscale or Wi-Fi comes up
+// after it started, and Playdown reports when it exits on its own - so the QR
+// in every window stays one that actually works.
+void listen<string>("remote://companion", (e) => {
+  if (!settings.remoteAccess) return;
+  try {
+    settings.companion = { urls: JSON.parse(e.payload).urls ?? [] };
+  } catch {
+    /* malformed line - keep the last good QR */
+  }
+});
+void listen("remote://companion-exit", () => {
+  settings.companion = null;
+  settings.companionStopped = settings.remoteAccess;
+});

@@ -72,6 +72,10 @@
   }
 
   let qrTab = $state(0);
+  // The address list can shrink while open (Wi-Fi drops): don't point past it.
+  $effect(() => {
+    if (qrTab >= (settings.companion?.urls.length ?? 0)) qrTab = 0;
+  });
   let phoneError = $state("");
   // Known at open time so the install note shows BEFORE the user toggles.
   let companionInstalled = $state(true);
@@ -256,6 +260,14 @@
           <code>{INSTALL_CMD}</code>
           <button class="btn-secondary" onclick={() => copyText(INSTALL_CMD)}>Copy</button>
           <button class="btn-secondary" onclick={recheckCompanion}>Check again</button>
+        </p>
+      {/if}
+      {#if settings.remoteAccess && settings.companionStopped}
+        <p class="muted small">
+          The phone companion stopped (disconnected or exited), so its QR no longer works.
+        </p>
+        <p class="muted small qr-url">
+          <button class="btn-secondary" onclick={recheckCompanion}>Start again</button>
         </p>
       {/if}
       {#if settings.remoteAccess && settings.companion}
