@@ -1852,13 +1852,15 @@ kbd {
   visibility: hidden;
   pointer-events: none;
 }
-/* Split view: the focused pane gets an accent line along its top so it is
-   clear which side the keyboard goes to. */
+/* Split view: a full accent frame on the pane the keyboard goes to, a faint
+   one on the other. Inset rings sit in the pane's padding, so they never
+   cover terminal cells or shift the layout. */
 .term-view.split-pane {
-  box-shadow: inset 0 2px 0 transparent;
+  border-radius: 4px;
+  box-shadow: inset 0 0 0 1px var(--border);
 }
 .term-view.split-pane.focused {
-  box-shadow: inset 0 2px 0 var(--accent);
+  box-shadow: inset 0 0 0 2px var(--accent);
 }
 .term-split-divider {
   position: absolute;

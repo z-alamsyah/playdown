@@ -29,6 +29,7 @@ export type Action =
   | "prevTerminal"
   | "closeTerminal"
   | "focusTerminal"
+  | "switchTerminalPane"
   | "toggleAnnotate"
   | "openSettings";
 
@@ -66,6 +67,7 @@ export const ACTIONS: ActionDef[] = [
   { id: "prevTerminal", label: "Previous terminal session" },
   { id: "closeTerminal", label: "Close terminal session" },
   { id: "focusTerminal", label: "Focus terminal / editor" },
+  { id: "switchTerminalPane", label: "Switch terminal pane (split)" },
   { id: "toggleAnnotate", label: "Toggle annotate mode" },
   { id: "openSettings", label: "Open settings" },
 ];
@@ -99,6 +101,7 @@ const DEFAULTS: Record<Action, string> = {
   prevTerminal: "Mod+Alt+ArrowUp",
   closeTerminal: "Mod+X",
   focusTerminal: "Mod+J",
+  switchTerminalPane: "Mod+Alt+J",
   toggleAnnotate: "Mod+Shift+A",
   openSettings: "Mod+,",
 };

@@ -201,8 +201,18 @@
         break;
       case "nextTab": groups.nextTab(); break;
       case "prevTab": groups.prevTab(); break;
-      case "focusNextGroup": groups.focusAdjacentGroup(1); break;
-      case "focusPrevGroup": groups.focusAdjacentGroup(-1); break;
+      // ⌘⌥→ / ⌘⌥← move between split panes when you're in the terminal,
+      // between editor groups otherwise.
+      case "focusNextGroup":
+        if (!(terminalFocused() && terminal.focusPane(1))) groups.focusAdjacentGroup(1);
+        break;
+      case "focusPrevGroup":
+        if (!(terminalFocused() && terminal.focusPane(0))) groups.focusAdjacentGroup(-1);
+        break;
+      case "switchTerminalPane":
+        if (!settings.terminalOpen) settings.setTerminalOpen(true);
+        if (!terminal.focusOtherPane()) ui.flash("The terminal isn't split - press ⌘\\ in the terminal to split it.", "ok");
+        break;
       case "zoomIn": zoomIn(); break;
       case "zoomOut": zoomOut(); break;
       case "zoomReset": zoomReset(); break;

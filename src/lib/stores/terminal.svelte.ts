@@ -78,6 +78,23 @@ class TerminalStore {
     return this.splitIds ? this.splitIds.includes(id) : id === this.activeId;
   }
 
+  /** Move keyboard focus to the other half of a split. False if not split. */
+  focusOtherPane(): boolean {
+    if (!this.splitIds) return false;
+    const other = this.splitIds.find((x) => x !== this.activeId) ?? this.splitIds[0];
+    this.activeId = other;
+    this.requestFocus();
+    return true;
+  }
+
+  /** Focus one half of a split: 0 = left/top, 1 = right/bottom. */
+  focusPane(index: 0 | 1): boolean {
+    if (!this.splitIds) return false;
+    this.activeId = this.splitIds[index];
+    this.requestFocus();
+    return true;
+  }
+
   /** Toggle the split. Splitting shows the focused session next to another
    *  tab (the one after it), or a fresh shell when it is the only tab; the
    *  new pane takes focus. Unsplitting keeps the focused session. */

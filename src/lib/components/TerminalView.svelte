@@ -284,7 +284,10 @@
   // app asks for it (⌘J focus-switch).
   $effect(() => {
     terminal.focusSeq;
-    if (focused && ready) requestAnimationFrame(() => term?.focus());
+    // Synchronous on purpose: effects run after the DOM update, so the pane
+    // is already visible. Deferring to a frame let a focus queued for one
+    // pane land after the keyboard had moved to the other.
+    if (focused && ready) term?.focus();
   });
 
   // A split pane resizing (divider drag, split on/off) changes this box
