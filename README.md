@@ -19,7 +19,7 @@ Playdown puts the two halves of agent-driven work in one light window: the markd
 | RAM (idle) | ~70–100 MB | 300–500+ MB |
 | Startup | < 0.5s | 1–3s |
 
-🌐 **[Landing page & download →](https://playdown.z-alamsyah.online/)**
+🌐 **[Landing page & download →](https://playdown-app.pages.dev/)**
 
 ## Install
 
